@@ -1,0 +1,324 @@
+"""
+Interactive Player Activity: Argentina vs France
+Python/Dash port of the original R/Shiny app (Phase_three.R)
+
+Same functionality:
+- Loads StatsBomb event data (matches_data/Argentina_vs_France.json) once at startup
+- Lets the user pick one Argentina player and one France player
+- Draws a heatmap (KDE) of each selected player's event locations on a pitch
+- Argentina attacks Left -> Right (raw coordinates)
+- France's coordinates are flipped (120 - x, 80 - y) so they visually
+  attack Right -> Left, matching the original R server logic
+"""
+
+import base64
+import io
+import json
+import os
+
+import matplotlib
+
+matplotlib.use("Agg")  # headless backend, required for server-side rendering
+import matplotlib.pyplot as plt
+import numpy as np
+import pandas as pd
+from dash import Dash, Input, Output, dcc, html
+from matplotlib.colors import to_rgba
+from mplsoccer import Pitch
+from scipy.stats import gaussian_kde
+
+# ---------------------------------------------------------
+# 1. DATA PREPARATION (Runs once when the app starts)
+# ---------------------------------------------------------
+DATA_PATH = os.path.join(
+    os.path.dirname(__file__), "matches_data", "Argentina_vs_France.json"
+)
+
+
+def load_events(path: str) -> pd.DataFrame:
+    """Load the StatsBomb event JSON and flatten it into a DataFrame,
+    equivalent to fromJSON(file_path, flatten = TRUE) in R."""
+    with open(path, "r", encoding="utf-8") as f:
+        raw_events = json.load(f)
+
+    # json_normalize flattens nested dicts (e.g. player.name, team.name)
+    # the same way jsonlite's flatten = TRUE does.
+    events = pd.json_normalize(raw_events, sep=".")
+    return events
+
+
+def prepare_dataframe(events: pd.DataFrame) -> pd.DataFrame:
+    """Filter valid locations, extract x/y coordinates, and drop rows
+    with missing player/team names. Mirrors the dplyr/purrr pipeline:
+
+        df_all <- events %>%
+          filter(!map_lgl(location, is.null)) %>%
+          mutate(x = map_dbl(location, 1), y = map_dbl(location, 2)) %>%
+          filter(!is.na(player.name), !is.na(team.name))
+    """
+    df = events.copy()
+
+    # Keep only rows where 'location' is a real [x, y] list (not NaN/None)
+    has_location = df["location"].apply(
+        lambda loc: isinstance(loc, (list, tuple)) and len(loc) >= 2
+    )
+    df = df.loc[has_location].copy()
+
+    # Extract coordinates (location[0] -> x, location[1] -> y)
+    df["x"] = df["location"].apply(lambda loc: loc[0])
+    df["y"] = df["location"].apply(lambda loc: loc[1])
+
+    # Drop rows with missing player or team names
+    df = df.dropna(subset=["player.name", "team.name"])
+
+    return df.reset_index(drop=True)
+
+
+events_raw = load_events(DATA_PATH)
+df_all = prepare_dataframe(events_raw)
+
+# Extract and sort player names by team (mirrors the R pull/unique/sort chain)
+argentina_players = sorted(
+    df_all.loc[df_all["team.name"] == "Argentina", "player.name"].unique().tolist()
+)
+france_players = sorted(
+    df_all.loc[df_all["team.name"] == "France", "player.name"].unique().tolist()
+)
+
+NONE_OPTION = "None"
+argentina_options = [NONE_OPTION] + argentina_players
+france_options = [NONE_OPTION] + france_players
+
+
+# ---------------------------------------------------------
+# 2. PLOTTING LOGIC (equivalent of the renderPlot/server logic)
+# ---------------------------------------------------------
+def density_overlay(
+    ax,
+    x,
+    y,
+    base_color,
+    bins: int = 15,
+    min_alpha: float = 0.0,
+    max_alpha: float = 0.75,
+    xlim=(0, 120),
+    ylim=(0, 80),
+):
+    """Replicates ggplot2's:
+        stat_density_2d(aes(alpha = after_stat(level)), fill = <color>,
+                         geom = "polygon", bins = 15)
+
+    by computing a 2D Gaussian KDE over the pitch grid and drawing it as
+    filled contour bands, with alpha increasing from the outer (low density)
+    bands to the inner (high density) core - same visual effect as mapping
+    ggplot's contour "level" to alpha.
+    """
+    x = np.asarray(x, dtype=float)
+    y = np.asarray(y, dtype=float)
+    if len(x) < 2:
+        return  # not enough points to estimate a density
+
+    xx, yy = np.mgrid[
+        xlim[0] : xlim[1] : 200j,
+        ylim[0] : ylim[1] : 200j,
+    ]
+    positions = np.vstack([xx.ravel(), yy.ravel()])
+
+    try:
+        kde = gaussian_kde(np.vstack([x, y]))
+    except np.linalg.LinAlgError:
+        return  # singular covariance (e.g. all points identical) - skip
+
+    zz = kde(positions).reshape(xx.shape)
+
+    # Drop the 0-level band (fully transparent anyway, and avoids a
+    # matplotlib warning about a degenerate first contour level)
+    levels = np.linspace(0, zz.max(), bins + 1)[1:]
+    if len(levels) < 2 or levels[-1] <= 0:
+        return
+
+    r, g, b, _ = to_rgba(base_color)
+    colors = [
+        (r, g, b, min_alpha + (max_alpha - min_alpha) * (i / (len(levels) - 1)))
+        for i in range(len(levels))
+    ]
+
+    ax.contourf(xx, yy, zz, levels=levels, colors=colors, extend="max", zorder=2)
+
+
+def make_pitch_figure(argentina_player: str, france_player: str):
+    """Builds the pitch + heatmap overlay figure, matching the ggplot2 logic:
+    - StatsBomb pitch dimensions, green fill, white lines
+    - Argentina heatmap in blue, attacking Left -> Right (raw coords)
+    - France heatmap in red, coordinates flipped to attack Right -> Left
+    """
+    pitch = Pitch(
+        pitch_type="statsbomb",
+        pitch_color="#3ab54a",
+        line_color="white",
+        linewidth=2,
+    )
+    fig, ax = pitch.draw(figsize=(8, 6))
+    fig.patch.set_facecolor("#3ab54a")
+
+    fig.suptitle(
+        "Heatmap Overlay",
+        fontsize=18,
+        fontweight="bold",
+        color="black",
+        y=0.98,
+    )
+    ax.set_title(
+        "Argentina (Right Attack) vs France (Left Attack)",
+        fontsize=12,
+        color="black",
+        pad=10,
+    )
+
+    # Argentina: remains attacking Left -> Right
+    if argentina_player and argentina_player != NONE_OPTION:
+        df_a = df_all.loc[df_all["player.name"] == argentina_player]
+        density_overlay(ax, df_a["x"], df_a["y"], "blue")
+
+    # France: flip coordinates to attack Right -> Left
+    if france_player and france_player != NONE_OPTION:
+        df_f = df_all.loc[df_all["player.name"] == france_player].copy()
+        df_f["x"] = 120 - df_f["x"]
+        df_f["y"] = 80 - df_f["y"]
+        density_overlay(ax, df_f["x"], df_f["y"], "red")
+
+    fig.tight_layout()
+    return fig
+
+
+def fig_to_base64(fig) -> str:
+    """Render a matplotlib figure to a base64 PNG string for use in dcc.Img."""
+    buf = io.BytesIO()
+    fig.savefig(buf, format="png", facecolor=fig.get_facecolor(), dpi=110)
+    plt.close(fig)
+    buf.seek(0)
+    encoded = base64.b64encode(buf.read()).decode("utf-8")
+    return f"data:image/png;base64,{encoded}"
+
+
+# ---------------------------------------------------------
+# 3. USER INTERFACE (UI) LAYOUT
+# ---------------------------------------------------------
+app = Dash(__name__)
+app.title = "Interactive Player Activity: Argentina vs France"
+
+PLAYER_LIST_STYLE = {
+    "maxHeight": "600px",
+    "overflowY": "auto",
+    "backgroundColor": "#f8f9fa",
+    "padding": "15px",
+    "borderRadius": "5px",
+    "border": "1px solid #dee2e6",
+}
+
+app.layout = html.Div(
+    [
+        html.H2(
+            "Interactive Player Activity: Argentina vs France",
+            style={"textAlign": "center"},
+        ),
+        html.Div(
+            [
+                # Left column: Argentina (Blue)
+                html.Div(
+                    [
+                        html.Div(
+                            [
+                                html.H4(
+                                    "Argentina",
+                                    style={
+                                        "color": "#0047AB",
+                                        "textAlign": "center",
+                                        "fontWeight": "bold",
+                                    },
+                                ),
+                                html.Label("Select Player:"),
+                                dcc.RadioItems(
+                                    id="argentina_player",
+                                    options=[
+                                        {"label": p, "value": p}
+                                        for p in argentina_options
+                                    ],
+                                    value=NONE_OPTION,
+                                    labelStyle={"display": "block", "padding": "2px 0"},
+                                ),
+                            ],
+                            style=PLAYER_LIST_STYLE,
+                        )
+                    ],
+                    style={"width": "25%", "padding": "0 10px"},
+                ),
+                # Center column: the pitch overlay
+                html.Div(
+                    [
+                        dcc.Loading(
+                            id="loading-pitch",
+                            type="circle",
+                            children=html.Img(
+                                id="pitchPlot",
+                                style={"width": "100%", "height": "auto"},
+                            ),
+                        )
+                    ],
+                    style={"width": "50%", "padding": "0 10px"},
+                ),
+                # Right column: France (Red)
+                html.Div(
+                    [
+                        html.Div(
+                            [
+                                html.H4(
+                                    "France",
+                                    style={
+                                        "color": "#C8102E",
+                                        "textAlign": "center",
+                                        "fontWeight": "bold",
+                                    },
+                                ),
+                                html.Label("Select Player:"),
+                                dcc.RadioItems(
+                                    id="france_player",
+                                    options=[
+                                        {"label": p, "value": p}
+                                        for p in france_options
+                                    ],
+                                    value=NONE_OPTION,
+                                    labelStyle={"display": "block", "padding": "2px 0"},
+                                ),
+                            ],
+                            style=PLAYER_LIST_STYLE,
+                        )
+                    ],
+                    style={"width": "25%", "padding": "0 10px"},
+                ),
+            ],
+            style={"display": "flex", "flexDirection": "row"},
+        ),
+    ],
+    style={"maxWidth": "1400px", "margin": "0 auto", "padding": "20px"},
+)
+
+
+# ---------------------------------------------------------
+# 4. CALLBACK (equivalent of the Shiny renderPlot reactive logic)
+# ---------------------------------------------------------
+@app.callback(
+    Output("pitchPlot", "src"),
+    Input("argentina_player", "value"),
+    Input("france_player", "value"),
+)
+def update_pitch(argentina_player, france_player):
+    fig = make_pitch_figure(argentina_player, france_player)
+    return fig_to_base64(fig)
+
+
+# ---------------------------------------------------------
+# 5. RUN THE APP
+# ---------------------------------------------------------
+if __name__ == "__main__":
+    app.run(debug=True)

@@ -1,0 +1,550 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Rasid | راصد — World Cup 2022 Performance Analytics</title>
+  <link rel="stylesheet" href="/static/styles.css" />
+</head>
+<body>
+  <div class="page-shell">
+    <nav class="top-nav">
+      <div class="brand-signature">
+        <div class="brand-mark">
+          <svg viewBox="0 0 120 120" aria-hidden="true">
+            <defs>
+              <linearGradient id="brandGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" stop-color="#F8B851" />
+                <stop offset="100%" stop-color="#D17F0D" />
+              </linearGradient>
+            </defs>
+            <circle cx="60" cy="60" r="54" fill="#101820" stroke="#F8B851" stroke-width="4" />
+            <path d="M42 80 L42 40 L72 40 L72 80 L60 80 L60 54 L54 54 L54 80 Z" fill="url(#brandGradient)" />
+            <circle cx="80" cy="40" r="8" fill="#F8B851" />
+          </svg>
+        </div>
+        <div>
+          <p class="eyebrow">Rasid — راصد</p>
+          <p class="nav-caption">World Cup 2022 analytics platform</p>
+        </div>
+      </div>
+      <div class="nav-links">
+        <button class="nav-link active" data-tab="home" type="button">Home</button>
+        <button class="nav-link" data-tab="matches" type="button">Matches</button>
+        <button class="nav-link" data-tab="players" type="button">Players</button>
+        <button class="nav-link" data-tab="teams" type="button">Teams</button>
+        <button class="nav-link" data-tab="profile" type="button">Profile</button>
+      </div>
+    </nav>
+
+    <main>
+      <div class="tab-panels">
+        <section class="tab-panel tab-home active">
+          <div class="dashboard-panel">
+            <div class="dashboard-header">
+              <div>
+                <p class="section-label">Dashboard</p>
+                <h1>Rasid match intelligence hub</h1>
+                <p class="hero-copy">Browse World Cup 2022 match performance and high-level team analytics. Use the search bar to filter matches by name.</p>
+              </div>
+              <div class="search-container">
+                <label for="match-search" class="sr-only">Search matches</label>
+                <input id="match-search" class="search-input" type="search" placeholder="Search matches..." />
+              </div>
+            </div>
+
+            <div class="stats-grid">
+              <article class="stat-card">
+                <p class="stat-label">Matches</p>
+                <p class="stat-value">{{ stats.match_count }}</p>
+              </article>
+              <article class="stat-card">
+                <p class="stat-label">Players</p>
+                <p class="stat-value">{{ stats.player_count }}</p>
+              </article>
+              <article class="stat-card">
+                <p class="stat-label">Teams</p>
+                <p class="stat-value">{{ stats.team_count }}</p>
+              </article>
+              <article class="stat-card">
+                <p class="stat-label">Goals</p>
+                <p class="stat-value">{{ stats.total_goals }}</p>
+              </article>
+            </div>
+          </div>
+
+          <section class="match-list-section">
+            <div class="section-intro">
+              <p class="section-label">Matches</p>
+              <h2>Search matches</h2>
+              <p>Type to filter match names and see results update with every letter.</p>
+            </div>
+            <div class="match-list" id="home-match-list">
+              {% for match in matches %}
+              <article class="match-card" data-title="{{ match.display_name|lower }}">
+                <div class="match-competitors">
+                  <div class="match-team {% if match.winner == match.home_team %}winner{% endif %}">{{ match.home_team }}</div>
+                  <div class="match-score-block">
+                    <span class="match-score">{{ match.home_score }}{% if match.home_penalties and match.home_penalties > 0 %} <span class="match-penalties">({{ match.home_penalties }})</span>{% endif %}</span>
+                    <span class="match-score-divider">-</span>
+                    <span class="match-score">{{ match.away_score }}{% if match.away_penalties and match.away_penalties > 0 %} <span class="match-penalties">({{ match.away_penalties }})</span>{% endif %}</span>
+                  </div>
+                  <div class="match-team {% if match.winner == match.away_team %}winner{% endif %}">{{ match.away_team }}</div>
+                </div>
+                <div class="match-card-foot">
+                  <p class="match-winner">Winner: <span>{{ match.winner }}</span></p>
+                  <button class="btn btn-secondary match-action" type="button">Open analysis</button>
+                </div>
+              </article>
+              {% endfor %}
+            </div>
+          </section>
+
+          <section class="cup-winner-section section-panel">
+            <div class="section-intro">
+              <p class="section-label">CUP Winner</p>
+              <h2>{{ cup_winner.name }}</h2>
+              <p>The champions of the 2022 FIFA World Cup are proudly showcased in Rasid’s home dashboard.</p>
+            </div>
+            <div class="cup-winner-card">
+              <div class="cup-winner-flag">
+                <img src="{{ cup_winner.flag }}" alt="{{ cup_winner.name }} flag" />
+              </div>
+              <div class="cup-winner-details">
+                <p class="cup-winner-title">{{ cup_winner.name }}</p>
+                <p class="cup-winner-meta">{{ cup_winner.wins }}</p>
+                <p class="cup-winner-final">Final: {{ cup_winner.name }} vs {{ cup_winner.final_opponent }}</p>
+                <div class="final-teams">
+                  <div class="final-team-pill">
+                    <img src="{{ cup_winner.flag }}" alt="{{ cup_winner.name }} flag" />
+                    <span>{{ cup_winner.name }}</span>
+                  </div>
+                  <div class="final-team-pill">
+                    <img src="{{ cup_winner.final_flag }}" alt="{{ cup_winner.final_opponent }} flag" />
+                    <span>{{ cup_winner.final_opponent }}</span>
+                  </div>
+                </div>
+                <p class="cup-winner-score">{{ cup_winner.final_score }}</p>
+              </div>
+            </div>
+          </section>
+        </section>
+
+        <section class="tab-panel tab-matches">
+          <div class="section-intro">
+            <p class="section-label">Matches</p>
+            <h2>Match results</h2>
+            <p>All match outcomes are calculated from match event data and highlighted by winner.</p>
+          </div>
+          <div class="search-container matches-search-container">
+            <label for="match-search-matches" class="sr-only">Search matches</label>
+            <input id="match-search-matches" class="search-input" type="search" placeholder="Search matches..." />
+          </div>
+          <div class="match-list" id="matches-tab-list">
+            {% for match in matches %}
+            <article class="match-card" data-title="{{ match.display_name|lower }}">
+              <div class="match-competitors">
+                <div class="match-team {% if match.winner == match.home_team %}winner{% endif %}">{{ match.home_team }}</div>
+                <div class="match-score-block">
+                    <span class="match-score">{{ match.home_score }}{% if match.home_penalties and match.home_penalties > 0 %} <span class="match-penalties">({{ match.home_penalties }})</span>{% endif %}</span>
+                    <span class="match-score-divider">-</span>
+                    <span class="match-score">{{ match.away_score }}{% if match.away_penalties and match.away_penalties > 0 %} <span class="match-penalties">({{ match.away_penalties }})</span>{% endif %}</span>
+                </div>
+                <div class="match-team {% if match.winner == match.away_team %}winner{% endif %}">{{ match.away_team }}</div>
+              </div>
+              <div class="match-card-foot">
+                <p class="match-winner">Winner: <span>{{ match.winner }}</span></p>
+                <button class="btn btn-secondary match-action" type="button">Open analysis</button>
+              </div>
+            </article>
+            {% endfor %}
+          </div>
+
+          <section class="group-standings-section">
+            <div class="section-intro">
+              <p class="section-label">Group stage</p>
+              <h2>Group standings</h2>
+              <p>Only group-stage matches are used to calculate these standings.</p>
+            </div>
+            <div class="group-standings-container">
+              <div class="group-grid">
+              {% for group in groups %}
+              <article class="group-card" data-group="{{ group.group }}">
+                <div class="group-card-header">
+                  <p class="group-card-title">Group {{ group.group }}</p>
+                </div>
+                <div class="group-table-wrapper">
+                  <div class="group-table">
+                    <div class="group-row group-row-head">
+                      <span>Team</span>
+                      <span>P</span>
+                      <span>W</span>
+                      <span>D</span>
+                      <span>L</span>
+                      <span>GF</span>
+                      <span>GA</span>
+                      <span>GD</span>
+                      <span>Pts</span>
+                      <span>Form</span>
+                    </div>
+                    {% for team in group.teams %}
+                    <div class="group-row">
+                      <span class="team-name">{{ team.name }}</span>
+                      <span>{{ team.played }}</span>
+                      <span>{{ team.wins }}</span>
+                      <span>{{ team.draws }}</span>
+                      <span>{{ team.losses }}</span>
+                      <span>{{ team.gf }}</span>
+                      <span>{{ team.ga }}</span>
+                      <span>{{ team.gd }}</span>
+                      <span>{{ team.points }}</span>
+                      <span class="form-dots">
+                        {% for result in team.form %}
+                        <span class="form-circle {{ result }}"></span>
+                        {% endfor %}
+                      </span>
+                    </div>
+                    {% endfor %}
+                  </div>
+                </div>
+              </article>
+              {% endfor %}
+            </div>
+            </div>
+          </section>
+
+          <section class="knockout-section section-panel">
+            <div class="section-intro">
+              <p class="section-label">Knockouts</p>
+              <h2>Qatar 2022 knockout path</h2>
+              <p>A visual overview of the dramatic knockout progression that shaped the tournament.</p>
+            </div>
+            <div class="knockout-bracket">
+              <div class="knockout-bracket-visual">
+                <!-- Left Side -->
+                <div class="bracket-side bracket-left">
+                  <!-- Round of 16 -->
+                  <div class="bracket-round" data-round="r16">
+                    <div class="round-label">Round of 16</div>
+                    <div class="round-matches">
+                      <div class="match-pair">
+                        <div class="team-pill winner"><img src="/Flags/Netherlands.png" alt=""><span>Netherlands</span></div>
+                        <div class="team-pill"><img src="/Flags/United States.png" alt=""><span>United States</span></div>
+                      </div>
+                      <div class="match-pair">
+                        <div class="team-pill winner"><img src="/Flags/Argentina.png" alt=""><span>Argentina</span></div>
+                        <div class="team-pill"><img src="/Flags/Australia.png" alt=""><span>Australia</span></div>
+                      </div>
+                      <div class="match-pair">
+                        <div class="team-pill"><img src="/Flags/Japan.png" alt=""><span>Japan</span></div>
+                        <div class="team-pill winner"><img src="/Flags/Croatia.png" alt=""><span>Croatia</span></div>
+                      </div>
+                      <div class="match-pair">
+                        <div class="team-pill winner"><img src="/Flags/Brazil.png" alt=""><span>Brazil</span></div>
+                        <div class="team-pill"><img src="/Flags/South Korea.png" alt=""><span>South Korea</span></div>
+                      </div>
+                    </div>
+                  </div>
+                  <!-- Quarter-finals -->
+                  <div class="bracket-round" data-round="qf">
+                    <div class="round-label">Quarter-finals</div>
+                    <div class="round-matches">
+                      <div class="match-pair">
+                        <div class="team-pill"><img src="/Flags/Netherlands.png" alt=""><span>Netherlands</span></div>
+                        <div class="team-pill winner"><img src="/Flags/Argentina.png" alt=""><span>Argentina</span></div>
+                      </div>
+                      <div class="match-pair">
+                        <div class="team-pill winner"><img src="/Flags/Croatia.png" alt=""><span>Croatia</span></div>
+                        <div class="team-pill"><img src="/Flags/Brazil.png" alt=""><span>Brazil</span></div>
+                      </div>
+                    </div>
+                  </div>
+                  <!-- Semi-finals -->
+                  <div class="bracket-round" data-round="sf">
+                    <div class="round-label">Semi-finals</div>
+                    <div class="round-matches">
+                      <div class="match-pair">
+                        <div class="team-pill winner"><img src="/Flags/Argentina.png" alt=""><span>Argentina</span></div>
+                        <div class="team-pill"><img src="/Flags/Croatia.png" alt=""><span>Croatia</span></div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Center Final -->
+                <div class="bracket-center">
+                  <div class="round-label">Final</div>
+                  <div class="final-match">
+                    <div class="team-pill winner"><img src="/Flags/Argentina.png" alt=""><span>Argentina</span></div>
+                    <div class="team-pill"><img src="/Flags/France.png" alt=""><span>France</span></div>
+                  </div>
+                </div>
+
+                <!-- Right Side -->
+                <div class="bracket-side bracket-right">
+                  <!-- Semi-finals -->
+                  <div class="bracket-round" data-round="sf">
+                    <div class="round-label">Semi-finals</div>
+                    <div class="round-matches">
+                      <div class="match-pair">
+                        <div class="team-pill winner"><img src="/Flags/France.png" alt=""><span>France</span></div>
+                        <div class="team-pill"><img src="/Flags/Morocco.png" alt=""><span>Morocco</span></div>
+                      </div>
+                    </div>
+                  </div>
+                  <!-- Quarter-finals -->
+                  <div class="bracket-round" data-round="qf">
+                    <div class="round-label">Quarter-finals</div>
+                    <div class="round-matches">
+                      <div class="match-pair">
+                        <div class="team-pill"><img src="/Flags/England.png" alt=""><span>England</span></div>
+                        <div class="team-pill winner"><img src="/Flags/France.png" alt=""><span>France</span></div>
+                      </div>
+                      <div class="match-pair">
+                        <div class="team-pill winner"><img src="/Flags/Morocco.png" alt=""><span>Morocco</span></div>
+                        <div class="team-pill"><img src="/Flags/Portugal.png" alt=""><span>Portugal</span></div>
+                      </div>
+                    </div>
+                  </div>
+                  <!-- Round of 16 -->
+                  <div class="bracket-round" data-round="r16">
+                    <div class="round-label">Round of 16</div>
+                    <div class="round-matches">
+                      <div class="match-pair">
+                        <div class="team-pill winner"><img src="/Flags/England.png" alt=""><span>England</span></div>
+                        <div class="team-pill"><img src="/Flags/Senegal.png" alt=""><span>Senegal</span></div>
+                      </div>
+                      <div class="match-pair">
+                        <div class="team-pill winner"><img src="/Flags/France.png" alt=""><span>France</span></div>
+                        <div class="team-pill"><img src="/Flags/Poland.png" alt=""><span>Poland</span></div>
+                      </div>
+                      <div class="match-pair">
+                        <div class="team-pill winner"><img src="/Flags/Morocco.png" alt=""><span>Morocco</span></div>
+                        <div class="team-pill"><img src="/Flags/Spain.png" alt=""><span>Spain</span></div>
+                      </div>
+                      <div class="match-pair">
+                        <div class="team-pill winner"><img src="/Flags/Portugal.png" alt=""><span>Portugal</span></div>
+                        <div class="team-pill"><img src="/Flags/Switzerland.png" alt=""><span>Switzerland</span></div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- SVG Connector Lines Overlay -->
+                <svg class="bracket-connectors" viewBox="0 0 1200 600" preserveAspectRatio="xMidYMid meet">
+                  <defs>
+                    <linearGradient id="lineGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+                      <stop offset="0%" stop-color="rgba(248,184,81,0.15)" />
+                      <stop offset="50%" stop-color="rgba(248,184,81,0.4)" />
+                      <stop offset="100%" stop-color="rgba(248,184,81,0.15)" />
+                    </linearGradient>
+                  </defs>
+                  <!-- Left side connectors -->
+                  <path class="connector" d="M 185 45 Q 230 45, 230 85 Q 230 125, 275 125" />
+                  <path class="connector" d="M 185 105 Q 230 105, 230 85 Q 230 125, 275 125" />
+                  <path class="connector" d="M 185 165 Q 230 165, 230 205 Q 230 245, 275 245" />
+                  <path class="connector" d="M 185 225 Q 230 225, 230 205 Q 230 245, 275 245" />
+                  <path class="connector" d="M 185 285 Q 230 285, 230 325 Q 230 365, 275 365" />
+                  <path class="connector" d="M 185 345 Q 230 345, 230 325 Q 230 365, 275 365" />
+                  <path class="connector" d="M 185 405 Q 230 405, 230 445 Q 230 485, 275 485" />
+                  <path class="connector" d="M 185 465 Q 230 465, 230 445 Q 230 485, 275 485" />
+
+                  <path class="connector" d="M 355 125 Q 400 125, 400 185 Q 400 245, 445 245" />
+                  <path class="connector" d="M 355 245 Q 400 245, 400 185 Q 400 245, 445 245" />
+                  <path class="connector" d="M 355 365 Q 400 365, 400 425 Q 400 485, 445 485" />
+                  <path class="connector" d="M 355 485 Q 400 485, 400 425 Q 400 485, 445 485" />
+
+                  <path class="connector" d="M 525 245 Q 570 245, 570 305 Q 570 365, 600 365" />
+                  <path class="connector" d="M 525 485 Q 570 485, 570 425 Q 570 365, 600 365" />
+
+                  <!-- Right side connectors -->
+                  <path class="connector" d="M 1015 45 Q 970 45, 970 85 Q 970 125, 925 125" />
+                  <path class="connector" d="M 1015 105 Q 970 105, 970 85 Q 970 125, 925 125" />
+                  <path class="connector" d="M 1015 165 Q 970 165, 970 205 Q 970 245, 925 245" />
+                  <path class="connector" d="M 1015 225 Q 970 225, 970 205 Q 970 245, 925 245" />
+                  <path class="connector" d="M 1015 285 Q 970 285, 970 325 Q 970 365, 925 365" />
+                  <path class="connector" d="M 1015 345 Q 970 345, 970 325 Q 970 365, 925 365" />
+                  <path class="connector" d="M 1015 405 Q 970 405, 970 445 Q 970 485, 925 485" />
+                  <path class="connector" d="M 1015 465 Q 970 465, 970 445 Q 970 485, 925 485" />
+
+                  <path class="connector" d="M 845 125 Q 800 125, 800 185 Q 800 245, 755 245" />
+                  <path class="connector" d="M 845 245 Q 800 245, 800 185 Q 800 245, 755 245" />
+                  <path class="connector" d="M 845 365 Q 800 365, 800 425 Q 800 485, 755 485" />
+                  <path class="connector" d="M 845 485 Q 800 485, 800 425 Q 800 485, 755 485" />
+
+                  <path class="connector" d="M 675 245 Q 630 245, 630 305 Q 630 365, 600 395" />
+                  <path class="connector" d="M 675 485 Q 630 485, 630 425 Q 630 365, 600 395" />
+                </svg>
+              </div>
+            </div>
+          </section>
+        </section>
+        <section class="tab-panel tab-players">          <div class="section-panel compact-panel">
+            <div class="section-intro">
+              <p class="section-label">Players</p>
+              <h2>Top award winners</h2>
+              <p>These are the standout figures who collected the major awards from the tournament.</p>
+            </div>
+            <div class="award-grid">
+              {% for award in awards %}
+              <button class="award-card" type="button" data-title="{{ award.trophy }}" data-description="{{ award.description }}" data-winner="{{ award.winner }}" data-meaning="{{ award.meaning }}" data-flag="{{ award.country_flag }}">
+                <div class="award-card-media">
+                  <img src="{{ award.image }}" alt="{{ award.winner }} portrait" />
+                </div>
+                <div class="award-card-body">
+                  <p class="award-card-name">{{ award.winner }}</p>
+                  <p class="award-card-trophy">{{ award.trophy }}</p>
+                  <p class="award-card-meaning">{{ award.meaning }}</p>
+                </div>
+              </button>
+              {% endfor %}
+            </div>
+          </div>
+        </section>
+
+        <section class="tab-panel tab-teams">
+          <div class="section-panel compact-panel coming-soon-panel">
+            <div>
+              <p class="section-label">Teams</p>
+              <h2>Teams tab coming soon</h2>
+              <p>Team analytics and roster intelligence are under development and will be added soon.</p>
+            </div>
+          </div>
+        </section>
+
+        <section class="tab-panel tab-profile">
+          <div class="section-panel compact-panel coming-soon-panel">
+            <div>
+              <p class="section-label">Profile</p>
+              <h2>Profile tab coming soon</h2>
+              <p>Profile and account information will be available in the next release.</p>
+            </div>
+          </div>
+        </section>
+      </div>
+    </main>
+  </div>
+  <div class="group-popup" id="group-popup" aria-hidden="true">
+    <div class="group-popup-card">
+      <p class="group-popup-title">Group standings analysis</p>
+      <p class="group-popup-copy">Analysis page for group standings is coming soon.</p>
+      <button class="btn btn-secondary" id="group-popup-close" type="button">Close</button>
+    </div>
+  </div>
+  <div class="award-modal" id="award-modal" aria-hidden="true">
+    <div class="award-modal-card">
+      <button class="award-modal-close" id="award-modal-close" type="button" aria-label="Close award details">×</button>
+      <div class="award-modal-flag">
+        <img id="award-modal-flag" src="" alt="Award winner flag" />
+      </div>
+      <p class="section-label">Award detail</p>
+      <h3 id="award-modal-title">Award</h3>
+      <p id="award-modal-winner" class="award-modal-winner"></p>
+      <p id="award-modal-meaning" class="award-modal-meaning"></p>
+      <p id="award-modal-description" class="award-modal-description"></p>
+    </div>
+  </div>
+  <script>
+    const tabButtons = document.querySelectorAll('.nav-link');
+    const panels = document.querySelectorAll('.tab-panel');
+    const searchInput = document.getElementById('match-search');
+
+    function showTab(targetTab) {
+      panels.forEach(panel => panel.classList.toggle('active', panel.classList.contains(`tab-${targetTab}`)));
+      tabButtons.forEach(button => button.classList.toggle('active', button.dataset.tab === targetTab));
+    }
+
+    const matchesSearchInput = document.getElementById('match-search-matches');
+
+    function filterMatches(listSelector, query) {
+      const cards = document.querySelectorAll(`${listSelector} .match-card`);
+      cards.forEach(card => {
+        const title = card.dataset.title || '';
+        card.style.display = title.includes(query) ? '' : 'none';
+      });
+    }
+
+    function handleSearchInput(event) {
+      const query = event.target.value.trim().toLowerCase();
+      const listId = event.target.id === 'match-search-matches' ? '#matches-tab-list' : '#home-match-list';
+      filterMatches(listId, query);
+    }
+
+    tabButtons.forEach(button => {
+      button.addEventListener('click', () => {
+        showTab(button.dataset.tab);
+      });
+    });
+
+    searchInput?.addEventListener('input', handleSearchInput);
+    matchesSearchInput?.addEventListener('input', handleSearchInput);
+
+    document.querySelectorAll('.match-action').forEach(button => {
+      button.addEventListener('click', () => {
+        alert('Analysis page coming soon.');
+      });
+    });
+
+    const groupCards = document.querySelectorAll('.group-card');
+    const groupPopup = document.getElementById('group-popup');
+    const groupPopupClose = document.getElementById('group-popup-close');
+
+    groupCards.forEach(card => {
+      card.addEventListener('click', () => {
+        const groupName = card.dataset.group || '';
+        groupPopup.querySelector('.group-popup-title').textContent = `Group ${groupName} analysis`;
+        groupPopup.classList.add('active');
+        groupPopup.setAttribute('aria-hidden', 'false');
+      });
+    });
+
+    groupPopupClose.addEventListener('click', () => {
+      groupPopup.classList.remove('active');
+      groupPopup.setAttribute('aria-hidden', 'true');
+    });
+
+    groupPopup.addEventListener('click', event => {
+      if (event.target === groupPopup) {
+        groupPopup.classList.remove('active');
+        groupPopup.setAttribute('aria-hidden', 'true');
+      }
+    });
+
+    const awardCards = document.querySelectorAll('.award-card');
+    const awardModal = document.getElementById('award-modal');
+    const awardModalClose = document.getElementById('award-modal-close');
+    const awardModalTitle = document.getElementById('award-modal-title');
+    const awardModalWinner = document.getElementById('award-modal-winner');
+    const awardModalMeaning = document.getElementById('award-modal-meaning');
+    const awardModalDescription = document.getElementById('award-modal-description');
+    const awardModalFlag = document.getElementById('award-modal-flag');
+
+    awardCards.forEach(card => {
+      card.addEventListener('click', () => {
+        awardModalTitle.textContent = card.dataset.title || 'Award';
+        awardModalWinner.textContent = card.dataset.winner || '';
+        awardModalMeaning.textContent = card.dataset.meaning || '';
+        awardModalDescription.textContent = card.dataset.description || '';
+        awardModalFlag.src = card.dataset.flag || '';
+        awardModalFlag.alt = `${card.dataset.winner || 'Winner'} flag`;
+        awardModal.classList.add('active');
+        awardModal.setAttribute('aria-hidden', 'false');
+      });
+    });
+
+    awardModalClose.addEventListener('click', () => {
+      awardModal.classList.remove('active');
+      awardModal.setAttribute('aria-hidden', 'true');
+    });
+
+    awardModal.addEventListener('click', event => {
+      if (event.target === awardModal) {
+        awardModal.classList.remove('active');
+        awardModal.setAttribute('aria-hidden', 'true');
+      }
+    });
+
+    showTab('home');
+  </script>
+</body>
+</html>
