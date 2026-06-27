@@ -647,7 +647,7 @@ body {
 }
 
 /* ============================================================
-   KNOCKOUT BRACKET — Artistic Redesign
+   KNOCKOUT BRACKET — Flexbox bracket with drawn connectors
    ============================================================ */
 
 .knockout-section {
@@ -656,7 +656,7 @@ body {
 
 .knockout-bracket {
   margin-top: 24px;
-  padding: 28px 20px;
+  padding: 28px 16px;
   background: rgba(255, 255, 255, 0.02);
   border-radius: 20px;
   border: 1px solid rgba(255, 255, 255, 0.06);
@@ -664,138 +664,159 @@ body {
 }
 
 .knockout-bracket-visual {
-  position: relative;
   display: flex;
-  align-items: center;
+  align-items: stretch;
   justify-content: center;
   gap: 0;
-  min-width: 1100px;
-  min-height: 580px;
+  min-width: 1080px;
+  padding: 8px 0;
 }
 
-/* SVG connector lines layer */
-.bracket-connectors {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  z-index: 1;
-  pointer-events: none;
-}
-
-.connector {
-  fill: none;
-  stroke: url(#lineGrad);
-  stroke-width: 2;
-  stroke-linecap: round;
-  opacity: 0.7;
-}
-
-/* Side containers */
-.bracket-side {
+.bracket-half {
   display: flex;
   align-items: center;
-  gap: 0;
-  z-index: 2;
+  flex: 1;
 }
 
-.bracket-left {
-  flex-direction: row;
-}
-
-.bracket-right {
-  flex-direction: row-reverse;
-}
-
-.bracket-center {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  z-index: 2;
-  padding: 0 20px;
-}
-
-/* Round columns */
+/* Each round is a column of matchups, stacked and centered */
 .bracket-round {
   display: flex;
   flex-direction: column;
-  align-items: center;
-  gap: 0;
+  justify-content: center;
+  flex: 1;
+  min-width: 152px;
+  padding: 0 8px;
 }
 
-.bracket-round[data-round="r16"] {
-  padding: 0 18px;
+.round-final {
+  min-width: 144px;
+  padding: 0 10px;
+  flex: 0 0 144px;
 }
 
-.bracket-round[data-round="qf"] {
-  padding: 0 24px;
-}
-
-.bracket-round[data-round="sf"] {
-  padding: 0 30px;
-}
-
-.round-label {
-  font-size: 0.7rem;
+.bracket-round .round-label {
+  font-size: 0.68rem;
   font-weight: 700;
   color: var(--accent);
   text-transform: uppercase;
-  letter-spacing: 0.14em;
-  margin-bottom: 20px;
+  letter-spacing: 0.12em;
   text-align: center;
-  opacity: 0.9;
+  margin: 0 0 18px;
 }
 
-.round-matches {
+.bracket-matchups {
   display: flex;
   flex-direction: column;
-  gap: 0;
+  justify-content: space-around;
+  flex: 1;
+  gap: 28px;
 }
 
-/* Match pair (two teams) */
-.match-pair {
+.bracket-matchup {
   display: flex;
   flex-direction: column;
   gap: 10px;
-  margin-bottom: 28px;
+  position: relative;
+  padding-right: 16px;
 }
 
-.match-pair:last-child {
-  margin-bottom: 0;
+/* Connector: bracket corner coming off each matchup, pointing toward center */
+.bracket-matchup::after {
+  content: "";
+  position: absolute;
+  top: 6px;
+  bottom: 6px;
+  right: 0;
+  width: 16px;
+  border: 1.5px solid rgba(248, 184, 81, 0.5);
+  border-left: none;
+  border-radius: 0 6px 6px 0;
 }
 
-/* Team pill styling */
+/* Connector continuing from the midpoint of a bracket corner to the next round */
+.bracket-matchup::before {
+  content: "";
+  position: absolute;
+  top: 50%;
+  right: -14px;
+  width: 14px;
+  height: 0;
+  border-top: 1.5px solid rgba(248, 184, 81, 0.6);
+}
+
+/* Right half mirrors the connectors to the left side of each matchup */
+.bracket-half-right .bracket-matchup {
+  padding-right: 0;
+  padding-left: 16px;
+}
+
+.bracket-half-right .bracket-matchup::after {
+  right: auto;
+  left: 0;
+  border: 1.5px solid rgba(248, 184, 81, 0.5);
+  border-right: none;
+  border-radius: 6px 0 0 6px;
+}
+
+.bracket-half-right .bracket-matchup::before {
+  right: auto;
+  left: -14px;
+}
+
+/* Final column needs no outward connector */
+.round-final .bracket-matchup::after,
+.round-final .bracket-matchup::before {
+  display: none;
+}
+
+/* Semi-final rounds (immediately next to Final) only need the short stub toward Final */
+.round-sf .bracket-matchup::after {
+  border-color: rgba(248, 184, 81, 0.45);
+}
+
+/* Team pills */
 .team-pill {
   display: inline-flex;
   align-items: center;
-  gap: 10px;
-  padding: 8px 16px 8px 8px;
-  border-radius: 999px;
+  gap: 6px;
+  padding: 6px 10px 6px 5px;
+  border-radius: 14px;
   background: rgba(255, 255, 255, 0.04);
   border: 1px solid rgba(255, 255, 255, 0.1);
   font-weight: 600;
-  font-size: 0.88rem;
+  font-size: 0.74rem;
+  line-height: 1.15;
   color: var(--text);
-  white-space: nowrap;
   cursor: default;
   transition: all 200ms ease;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  width: 100%;
+}
+
+.team-pill span {
+  overflow: visible;
+  text-overflow: unset;
+  white-space: normal;
+}
+
+.bracket-half-right .team-pill {
+  flex-direction: row-reverse;
+  padding: 6px 5px 6px 10px;
+}
+
+.bracket-half-right .team-pill span {
+  text-align: right;
 }
 
 .team-pill:hover {
-  transform: translateX(3px);
-  border-color: rgba(248, 184, 81, 0.25);
-  box-shadow: 0 4px 16px rgba(248, 184, 81, 0.1);
-}
-
-.bracket-right .team-pill:hover {
-  transform: translateX(-3px);
+  transform: scale(1.03);
+  border-color: rgba(248, 184, 81, 0.3);
+  box-shadow: 0 4px 16px rgba(248, 184, 81, 0.12);
 }
 
 .team-pill img {
-  width: 32px;
-  height: 32px;
+  width: 22px;
+  height: 22px;
   border-radius: 50%;
   object-fit: cover;
   border: 2px solid rgba(255, 255, 255, 0.15);
@@ -806,42 +827,30 @@ body {
 
 .team-pill.winner {
   background: rgba(248, 184, 81, 0.08);
-  border-color: rgba(248, 184, 81, 0.35);
+  border-color: rgba(248, 184, 81, 0.4);
   color: #fff;
 }
 
 .team-pill.winner img {
   border-color: var(--accent);
-  box-shadow: 0 0 12px rgba(248, 184, 81, 0.35);
+  box-shadow: 0 0 10px rgba(248, 184, 81, 0.35);
 }
 
-/* Final center section */
-.final-match {
-  display: flex;
-  flex-direction: column;
-  gap: 14px;
-  align-items: center;
+/* Final pills get a touch more presence without breaking width */
+.final-matchup .team-pill {
+  padding: 8px 10px 8px 6px;
+  font-size: 0.78rem;
 }
 
-.final-match .team-pill {
-  padding: 10px 20px 10px 10px;
-  font-size: 1rem;
+.final-matchup .team-pill img {
+  width: 26px;
+  height: 26px;
 }
 
-.final-match .team-pill img {
-  width: 38px;
-  height: 38px;
-}
-
-.final-match .team-pill.winner {
+.final-matchup .team-pill.winner {
   background: rgba(248, 184, 81, 0.12);
   border-color: rgba(248, 184, 81, 0.5);
-  box-shadow: 0 0 20px rgba(248, 184, 81, 0.15);
-}
-
-.bracket-center .round-label {
-  margin-bottom: 28px;
-  font-size: 0.8rem;
+  box-shadow: 0 0 18px rgba(248, 184, 81, 0.15);
 }
 
 /* Award grid */
@@ -991,27 +1000,35 @@ body {
   }
 
   .knockout-bracket-visual {
-    min-width: 900px;
-    min-height: 520px;
+    min-width: 980px;
+  }
+
+  .bracket-round {
+    min-width: 140px;
+    padding: 0 10px;
   }
 
   .team-pill {
-    font-size: 0.78rem;
-    padding: 6px 12px 6px 6px;
+    font-size: 0.75rem;
+    padding: 5px 10px 5px 5px;
+  }
+
+  .bracket-half-right .team-pill {
+    padding: 5px 5px 5px 10px;
   }
 
   .team-pill img {
-    width: 26px;
-    height: 26px;
+    width: 24px;
+    height: 24px;
   }
 
-  .final-match .team-pill {
-    font-size: 0.9rem;
+  .final-matchup .team-pill {
+    font-size: 0.85rem;
   }
 
-  .final-match .team-pill img {
-    width: 32px;
-    height: 32px;
+  .final-matchup .team-pill img {
+    width: 30px;
+    height: 30px;
   }
 }
 
