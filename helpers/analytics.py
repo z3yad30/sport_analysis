@@ -4,7 +4,7 @@ from pathlib import Path
 BASE_DIR = Path(__file__).resolve().parent.parent
 MATCHES_DIR = BASE_DIR / "matches_data"
 CACHE_DIR = Path(__file__).resolve().parent
-CACHE_VERSION = 4
+CACHE_VERSION = 5
 OTHER_DATA_PATH = BASE_DIR / "other" / "106.json"
 GROUPS_CACHE_PATH = CACHE_DIR / "group_standings.json"
 
@@ -194,6 +194,60 @@ def scan_matches():
     return players_set, teams_set, total_goals, match_results
 
 
+def scan_players_with_teams():
+    """Scan all match data and extract players with their teams."""
+    players_dict = {}  # {player_name: team_name}
+
+    if not MATCHES_DIR.exists():
+        return []
+
+    for file_path in sorted(MATCHES_DIR.glob("*.json")):
+        raw_data = safe_load_json(file_path)
+        if not isinstance(raw_data, list):
+            continue
+
+        for event in raw_data:
+            # Get team for this event
+            event_team = get_event_team(event)
+            if not event_team:
+                continue
+
+            # Extract player from main player field
+            player = event.get("player")
+            if isinstance(player, dict):
+                player_name = player.get("name")
+                if isinstance(player_name, str) and player_name.strip():
+                    players_dict[player_name.strip()] = event_team.strip()
+
+            # Extract player from pass recipient
+            if isinstance(event.get("pass"), dict):
+                recipient = event["pass"].get("recipient")
+                if isinstance(recipient, dict):
+                    recipient_name = recipient.get("name")
+                    if isinstance(recipient_name, str) and recipient_name.strip():
+                        players_dict[recipient_name.strip()] = event_team.strip()
+
+            # Extract players from tactics lineup (starting XI)
+            if isinstance(event.get("tactics"), dict):
+                lineup = event["tactics"].get("lineup")
+                if isinstance(lineup, list):
+                    for item in lineup:
+                        player = item.get("player")
+                        if isinstance(player, dict):
+                            player_name = player.get("name")
+                            if isinstance(player_name, str) and player_name.strip():
+                                players_dict[player_name.strip()] = event_team.strip()
+
+    # Convert to list of dicts and sort by team then name
+    players_list = [
+        {"name": name, "team": team}
+        for name, team in players_dict.items()
+    ]
+    players_list.sort(key=lambda x: (x["team"], x["name"]))
+
+    return players_list
+
+
 def load_group_metadata():
     raw_data = safe_load_json(OTHER_DATA_PATH)
     return raw_data if isinstance(raw_data, list) else []
@@ -322,8 +376,9 @@ def ensure_cache():
     missing_cache = missing_cache or cache_info.get('match_count') != expected_file_count
     if missing_cache:
         players_set, teams_set, total_goals, matches = scan_matches()
+        players_with_teams = scan_players_with_teams()
         groups = build_group_standings()
-        safe_write_json(players_path, {"players": sorted(players_set)})
+        safe_write_json(players_path, {"players": players_with_teams})
         safe_write_json(teams_path, {"teams": sorted(teams_set)})
         safe_write_json(goals_path, {"total_goals": total_goals})
         safe_write_json(results_path, {"matches": matches})
@@ -333,7 +388,7 @@ def ensure_cache():
             "match_count": expected_file_count,
         })
         return {
-            "players": sorted(players_set),
+            "players": players_with_teams,
             "teams": sorted(teams_set),
             "total_goals": total_goals,
             "matches": matches,
@@ -363,3 +418,43 @@ def load_dashboard_data():
         "team_count": len(data["teams"]),
         "total_goals": data["total_goals"],
     }, data["matches"], data.get("groups", [])
+
+
+def search_players(query):
+    """Search players by name or team.
+
+    Args:
+        query: Search string (player name or team name)
+
+    Returns:
+        List of matching players with their teams
+    """
+    data = ensure_cache()
+    players = data.get("players", [])
+
+    if not query or not query.strip():
+        return []
+
+    query_lower = query.strip().lower()
+    results = []
+
+    for player in players:
+        player_name = player.get("name", "").lower()
+        team_name = player.get("team", "").lower()
+
+        if query_lower in player_name:
+            results.append(player)
+        elif query_lower in team_name:
+            team_matches = [p for p in players if query_lower in p.get("team", "").lower()]
+            results.extend(team_matches)
+            break
+
+    seen = set()
+    unique_results = []
+    for player in results:
+        player_key = (player.get("name"), player.get("team"))
+        if player_key not in seen:
+            seen.add(player_key)
+            unique_results.append(player)
+
+    return unique_results

@@ -1,8 +1,8 @@
 from pathlib import Path
 
-from flask import Flask, render_template, send_from_directory
+from flask import Flask, render_template, send_from_directory, request, jsonify
 
-from helpers.analytics import load_dashboard_data
+from helpers.analytics import load_dashboard_data, search_players
 
 BASE_DIR = Path(__file__).resolve().parent
 
@@ -117,6 +117,24 @@ def index():
         knockout_rounds=knockout_rounds,
         awards=awards,
     )
+
+
+@app.route('/api/search-players')
+def search_players_api():
+    query = request.args.get('q', '').strip()
+    results = search_players(query)
+    
+    # Add image path to each player
+    enhanced_results = []
+    for player in results:
+        player_data = {
+            "name": player.get("name"),
+            "team": player.get("team"),
+            "image": f"/Players/{player.get('name')}.png"
+        }
+        enhanced_results.append(player_data)
+    
+    return jsonify(enhanced_results)
 
 
 if __name__ == '__main__':
