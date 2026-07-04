@@ -1,0 +1,147 @@
+:root {
+  --bg: #07121f;
+  --surface: #111b2d;
+  --surface-strong: #0f172b;
+  --text: #e8eef8;
+  --muted: #99a5b9;
+  --accent: #f8b851;
+  --accent-dark: #d17f0d;
+  --border: rgba(248, 184, 81, 0.12);
+  --shadow: 0 28px 70px rgba(0, 0, 0, 0.22);
+  font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html, body {
+  margin: 0;
+  min-height: 100%;
+  background: radial-gradient(circle at top left, rgba(248, 184, 81, 0.14), transparent 30%),
+              linear-gradient(180deg, #07121f 0%, #050a14 100%);
+  color: var(--text);
+}
+
+body {
+  line-height: 1.65;
+}
+
+.page-shell {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 32px 24px 80px;
+}
+
+/* NAVIGATION */
+.top-nav {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: center;
+  gap: 24px;
+  margin-bottom: 40px;
+  padding: 24px 28px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid var(--border);
+  border-radius: 28px;
+}
+
+.brand-signature {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+}
+
+.brand-mark {
+  width: 72px;
+  height: 72px;
+}
+
+.eyebrow {
+  margin: 0 0 18px;
+  font-size: 0.95rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--accent);
+}
+
+.nav-caption {
+  margin: 0;
+  color: var(--muted);
+}
+
+.nav-links {
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.nav-link {
+  border: none;
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--text);
+  padding: 12px 20px;
+  border-radius: 999px;
+  cursor: pointer;
+  text-decoration: none;
+  transition: background 180ms ease;
+}
+
+.nav-link.active,
+.nav-link:hover {
+  background: rgba(248, 184, 81, 0.18);
+}
+
+/* PANELS */
+.section-panel {
+  margin-bottom: 40px;
+  padding: 36px 32px;
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid var(--border);
+  border-radius: 28px;
+}
+
+.compact-panel {
+  padding: 28px;
+}
+
+.section-label {
+  margin: 0 0 12px;
+  text-transform: uppercase;
+  font-size: 0.85rem;
+  letter-spacing: 0.16em;
+  color: var(--accent);
+}
+
+.coming-soon-panel {
+  margin-top: 30px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+  min-height: 300px;
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid var(--border);
+  border-radius: 28px;
+}
+
+/* RESPONSIVENESS */
+@media (max-width: 980px) {
+  .top-nav {
+    padding: 20px;
+  }
+}
+
+@media (max-width: 700px) {
+  .nav-links {
+    width: 100%;
+    justify-content: space-between;
+  }
+}
+
+@media (max-width: 640px) {
+  .page-shell {
+    padding: 22px 18px 48px;
+  }
+}

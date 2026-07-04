@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="900" height="560" viewBox="0 0 900 560">
+  <rect width="900" height="560" fill="#0f172b"/>
+  <rect x="70" y="90" width="760" height="380" rx="28" fill="#13233c" stroke="#f8b851" stroke-width="6"/>
+  <rect x="110" y="140" width="680" height="140" rx="18" fill="#ffffff"/>
+  <rect x="120" y="180" width="220" height="22" rx="11" fill="#d6dbe6"/>
+  <rect x="360" y="180" width="180" height="22" rx="11" fill="#d6dbe6"/>
+  <rect x="560" y="180" width="210" height="22" rx="11" fill="#d6dbe6"/>
+  <path d="M250 360c60-70 145-110 245-110s185 40 255 110" stroke="#f8b851" stroke-width="16" stroke-linecap="round" fill="none"/>
+  <circle cx="310" cy="330" r="48" fill="#f8b851"/>
+  <circle cx="600" cy="330" r="48" fill="#f8b851"/>
+  <text x="450" y="240" text-anchor="middle" fill="#111827" font-family="Arial, sans-serif" font-size="40" font-weight="700">JAPAN STUNS</text>
+</svg>

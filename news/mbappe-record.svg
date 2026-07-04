@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="900" height="560" viewBox="0 0 900 560">
+  <rect width="900" height="560" fill="#07121f"/>
+  <rect x="70" y="90" width="760" height="380" rx="28" fill="#16253d" stroke="#f8b851" stroke-width="6"/>
+  <circle cx="300" cy="280" r="126" fill="#f8b851" opacity="0.9"/>
+  <circle cx="300" cy="280" r="90" fill="#07121f"/>
+  <path d="M512 220h170" stroke="#f8b851" stroke-width="18" stroke-linecap="round"/>
+  <path d="M512 280h150" stroke="#ffffff" stroke-width="18" stroke-linecap="round"/>
+  <path d="M512 340h120" stroke="#75b7ff" stroke-width="18" stroke-linecap="round"/>
+  <text x="610" y="245" text-anchor="middle" fill="#ffffff" font-family="Arial, sans-serif" font-size="34" font-weight="700">MBAPPÉ</text>
+  <text x="610" y="290" text-anchor="middle" fill="#f8b851" font-family="Arial, sans-serif" font-size="24" font-weight="700">RECORD NIGHT</text>
+</svg>

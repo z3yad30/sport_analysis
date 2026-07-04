@@ -432,10 +432,16 @@ def search_players(query):
     data = ensure_cache()
     players = data.get("players", [])
 
-    if not query or not query.strip():
+    # Strict check to ensure query is not empty
+    if not query or not isinstance(query, str) or not query.strip():
         return []
 
     query_lower = query.strip().lower()
+    
+    # Additional safety check to prevent empty strings from matching all players
+    if not query_lower:
+        return []
+    
     results = []
 
     for player in players:

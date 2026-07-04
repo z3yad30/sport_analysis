@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Rasid | راصد — Matches</title>
+  <link rel="stylesheet" href="/pages/matches/matches.css" />
+</head>
+<body>
+  <div class="page-shell">
+    <nav class="top-nav">
+      <div class="brand-signature">
+        <div class="brand-mark">
+          <svg viewBox="0 0 120 120" aria-hidden="true">
+            <defs>
+              <linearGradient id="brandGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" stop-color="#F8B851" />
+                <stop offset="100%" stop-color="#D17F0D" />
+              </linearGradient>
+            </defs>
+            <circle cx="60" cy="60" r="54" fill="#101820" stroke="#F8B851" stroke-width="4" />
+            <path d="M42 80 L42 40 L72 40 L72 80 L60 80 L60 54 L54 54 L54 80 Z" fill="url(#brandGradient)" />
+            <circle cx="80" cy="40" r="8" fill="#F8B851" />
+          </svg>
+        </div>
+        <div>
+          <p class="eyebrow">Rasid — راصد</p>
+          <p class="nav-caption">World Cup 2022 analytics platform</p>
+        </div>
+      </div>
+      <div class="nav-links">
+        <a class="nav-link" href="/">Home</a>
+        <a class="nav-link active" href="/matches">Matches</a>
+        <a class="nav-link" href="/players">Players</a>
+        <a class="nav-link" href="/teams">Teams</a>
+        <a class="nav-link" href="/profile">Profile</a>
+      </div>
+    </nav>
+
+    <main>
+      <section class="matches-list-section">
+        <div class="section-intro">
+          <p class="section-label">Matches</p>
+          <h2>Match results</h2>
+          <p>All match outcomes are calculated from match event data and highlighted by winner.</p>
+        </div>
+        <div class="search-container matches-search-container">
+          <label for="match-search-matches" class="sr-only">Search matches</label>
+          <input id="match-search-matches" class="search-input" type="search" placeholder="Search matches..." />
+        </div>
+        <div class="match-list" id="matches-tab-list">
+          {% for match in matches %}
+          <article class="match-card" data-title="{{ match.display_name|lower }}" data-match-id="{{ match.id }}">
+            <div class="match-competitors">
+              <div class="match-team {% if match.winner == match.home_team %}winner{% endif %}">{{ match.home_team }}</div>
+              <div class="match-score-block">
+                <span class="match-score">{{ match.home_score }}{% if match.home_penalties and match.home_penalties > 0 %} <span class="match-penalties">({{ match.home_penalties }})</span>{% endif %}</span>
+                <span class="match-score-divider">-</span>
+                <span class="match-score">{{ match.away_score }}{% if match.away_penalties and match.away_penalties > 0 %} <span class="match-penalties">({{ match.away_penalties }})</span>{% endif %}</span>
+              </div>
+              <div class="match-team {% if match.winner == match.away_team %}winner{% endif %}">{{ match.away_team }}</div>
+            </div>
+            <div class="match-card-foot">
+              <p class="match-winner">Winner: <span>{{ match.winner }}</span></p>
+              <button class="btn btn-secondary match-action" type="button">Open analysis</button>
+            </div>
+          </article>
+          {% endfor %}
+        </div>
+      </section>
+
+      <section class="group-standings-section">
+        <div class="section-intro">
+          <p class="section-label">Group stage</p>
+          <h2>Group standings</h2>
+          <p>Only group-stage matches are used to calculate these standings.</p>
+        </div>
+        <div class="group-standings-container">
+          <div class="group-grid">
+            {% for group in groups %}
+            <article class="group-card" data-group="{{ group.group }}">
+              <div class="group-card-header">
+                <p class="group-card-title">Group {{ group.group }}</p>
+              </div>
+              <div class="group-table-wrapper">
+                <div class="group-table">
+                  <div class="group-row group-row-head">
+                    <span>Team</span>
+                    <span>P</span>
+                    <span>W</span>
+                    <span>D</span>
+                    <span>L</span>
+                    <span>GF</span>
+                    <span>GA</span>
+                    <span>GD</span>
+                    <span>Pts</span>
+                    <span>Form</span>
+                  </div>
+                  {% for team in group.teams %}
+                  <div class="group-row">
+                    <span class="team-name">{{ team.name }}</span>
+                    <span>{{ team.played }}</span>
+                    <span>{{ team.wins }}</span>
+                    <span>{{ team.draws }}</span>
+                    <span>{{ team.losses }}</span>
+                    <span>{{ team.gf }}</span>
+                    <span>{{ team.ga }}</span>
+                    <span>{{ team.gd }}</span>
+                    <span>{{ team.points }}</span>
+                    <span class="form-dots">
+                      {% for result in team.form %}
+                      <span class="form-circle {{ result }}"></span>
+                      {% endfor %}
+                    </span>
+                  </div>
+                  {% endfor %}
+                </div>
+              </div>
+            </article>
+            {% endfor %}
+          </div>
+        </div>
+      </section>
+
+      <section class="knockout-section section-panel">
+        <div class="section-intro">
+          <p class="section-label">Knockouts</p>
+          <h2>Qatar 2022 knockout path</h2>
+          <p>A visual overview of the dramatic knockout progression that shaped the tournament.</p>
+        </div>
+        <div class="knockout-bracket">
+          <div class="knockout-bracket-visual">
+            <!-- LEFT HALF -->
+            <div class="bracket-half bracket-half-left">
+              <!-- Round of 16 (left) -->
+              <div class="bracket-round round-r16">
+                <p class="round-label">Round of 16</p>
+                <div class="bracket-matchups">
+                  <div class="bracket-matchup">
+                    <div class="team-pill winner"><img src="/Flags/Netherlands.png" alt=""><span>Netherlands</span></div>
+                    <div class="team-pill"><img src="/Flags/United States.png" alt=""><span>United States</span></div>
+                  </div>
+                  <div class="bracket-matchup">
+                    <div class="team-pill winner"><img src="/Flags/Argentina.png" alt=""><span>Argentina</span></div>
+                    <div class="team-pill"><img src="/Flags/Australia.png" alt=""><span>Australia</span></div>
+                  </div>
+                  <div class="bracket-matchup">
+                    <div class="team-pill"><img src="/Flags/Japan.png" alt=""><span>Japan</span></div>
+                    <div class="team-pill winner"><img src="/Flags/Croatia.png" alt=""><span>Croatia</span></div>
+                  </div>
+                  <div class="bracket-matchup">
+                    <div class="team-pill winner"><img src="/Flags/Brazil.png" alt=""><span>Brazil</span></div>
+                    <div class="team-pill"><img src="/Flags/South Korea.png" alt=""><span>South Korea</span></div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Quarter-finals (left) -->
+              <div class="bracket-round round-qf">
+                <p class="round-label">Quarter-finals</p>
+                <div class="bracket-matchups">
+                  <div class="bracket-matchup">
+                    <div class="team-pill"><img src="/Flags/Netherlands.png" alt=""><span>Netherlands</span></div>
+                    <div class="team-pill winner"><img src="/Flags/Argentina.png" alt=""><span>Argentina</span></div>
+                  </div>
+                  <div class="bracket-matchup">
+                    <div class="team-pill winner"><img src="/Flags/Croatia.png" alt=""><span>Croatia</span></div>
+                    <div class="team-pill"><img src="/Flags/Brazil.png" alt=""><span>Brazil</span></div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Semi-final (left) -->
+              <div class="bracket-round round-sf">
+                <p class="round-label">Semi-final</p>
+                <div class="bracket-matchups">
+                  <div class="bracket-matchup">
+                    <div class="team-pill winner"><img src="/Flags/Argentina.png" alt=""><span>Argentina</span></div>
+                    <div class="team-pill"><img src="/Flags/Croatia.png" alt=""><span>Croatia</span></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- FINAL -->
+            <div class="bracket-round round-final">
+              <p class="round-label">Final</p>
+              <div class="bracket-matchups">
+                <div class="bracket-matchup final-matchup">
+                  <div class="team-pill winner"><img src="/Flags/Argentina.png" alt=""><span>Argentina</span></div>
+                  <div class="team-pill"><img src="/Flags/France.png" alt=""><span>France</span></div>
+                </div>
+              </div>
+            </div>
+
+            <!-- RIGHT HALF -->
+            <div class="bracket-half bracket-half-right">
+              <!-- Semi-final (right) -->
+              <div class="bracket-round round-sf">
+                <p class="round-label">Semi-final</p>
+                <div class="bracket-matchups">
+                  <div class="bracket-matchup">
+                    <div class="team-pill winner"><img src="/Flags/France.png" alt=""><span>France</span></div>
+                    <div class="team-pill"><img src="/Flags/Morocco.png" alt=""><span>Morocco</span></div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Quarter-finals (right) -->
+              <div class="bracket-round round-qf">
+                <p class="round-label">Quarter-finals</p>
+                <div class="bracket-matchups">
+                  <div class="bracket-matchup">
+                    <div class="team-pill"><img src="/Flags/England.png" alt=""><span>England</span></div>
+                    <div class="team-pill winner"><img src="/Flags/France.png" alt=""><span>France</span></div>
+                  </div>
+                  <div class="bracket-matchup">
+                    <div class="team-pill winner"><img src="/Flags/Morocco.png" alt=""><span>Morocco</span></div>
+                    <div class="team-pill"><img src="/Flags/Portugal.png" alt=""><span>Portugal</span></div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Round of 16 (right) -->
+              <div class="bracket-round round-r16">
+                <p class="round-label">Round of 16</p>
+                <div class="bracket-matchups">
+                  <div class="bracket-matchup">
+                    <div class="team-pill winner"><img src="/Flags/England.png" alt=""><span>England</span></div>
+                    <div class="team-pill"><img src="/Flags/Senegal.png" alt=""><span>Senegal</span></div>
+                  </div>
+                  <div class="bracket-matchup">
+                    <div class="team-pill winner"><img src="/Flags/France.png" alt=""><span>France</span></div>
+                    <div class="team-pill"><img src="/Flags/Poland.png" alt=""><span>Poland</span></div>
+                  </div>
+                  <div class="bracket-matchup">
+                    <div class="team-pill winner"><img src="/Flags/Morocco.png" alt=""><span>Morocco</span></div>
+                    <div class="team-pill"><img src="/Flags/Spain.png" alt=""><span>Spain</span></div>
+                  </div>
+                  <div class="bracket-matchup">
+                    <div class="team-pill winner"><img src="/Flags/Portugal.png" alt=""><span>Portugal</span></div>
+                    <div class="team-pill"><img src="/Flags/Switzerland.png" alt=""><span>Switzerland</span></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <div class="group-popup" id="group-popup" aria-hidden="true">
+    <div class="group-popup-card">
+      <p class="group-popup-title">Group standings analysis</p>
+      <p class="group-popup-copy">Analysis page for group standings is coming soon.</p>
+      <button class="btn btn-secondary" id="group-popup-close" type="button">Close</button>
+    </div>
+  </div>
+
+  <script src="/pages/matches/matches.js" defer></script>
+</body>
+</html>

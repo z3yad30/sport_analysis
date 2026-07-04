@@ -6,7 +6,7 @@ from helpers.analytics import load_dashboard_data, search_players
 
 BASE_DIR = Path(__file__).resolve().parent
 
-app = Flask(__name__)
+app = Flask(__name__, template_folder='pages', static_url_path='/pages', static_folder='pages')
 
 
 @app.route('/Flags/<path:filename>')
@@ -19,8 +19,13 @@ def serve_player(filename):
     return send_from_directory(BASE_DIR / 'Players', filename)
 
 
+@app.route('/news/<path:filename>')
+def serve_news(filename):
+    return send_from_directory(BASE_DIR / 'news', filename)
+
+
 @app.route('/')
-def index():
+def home():
     stats, matches, groups = load_dashboard_data()
     cup_winner = {
         'name': 'Argentina',
@@ -30,37 +35,54 @@ def index():
         'final_flag': '/Flags/France.png',
         'final_score': 'Argentina 3 - 3 France (Argentina won 4-2 on penalties)',
     }
-    knockout_rounds = [
+    news_items = [
         {
-            'name': 'Round of 16',
-            'matches': [
-                ('Netherlands', 'United States'),
-                ('Argentina', 'Australia'),
-                ('France', 'Poland'),
-                ('England', 'Senegal'),
-            ],
+            'tag': 'Champions',
+            'headline': 'Messi’s final chapter crowns Argentina in Qatar',
+            'content': 'Argentina lifted the trophy after Lionel Messi led a fearless campaign and a dramatic final against France.',
+            'image': '/news/argentina-final.png',
         },
         {
-            'name': 'Quarter-finals',
-            'matches': [
-                ('Argentina', 'Netherlands'),
-                ('France', 'England'),
-                ('Croatia', 'Brazil'),
-                ('Morocco', 'Portugal'),
-            ],
+            'tag': 'Surprise story',
+            'headline': 'Japan’s run shocks the tournament favourites',
+            'content': 'Japan stunned Germany and Spain to become the story of the group stage before a thrilling knockout run.',
+            'image': '/news/japan-shock.svg',
         },
         {
-            'name': 'Semi-finals',
-            'matches': [
-                ('Argentina', 'Croatia'),
-                ('France', 'Morocco'),
-            ],
+            'tag': 'African dream',
+            'headline': 'Morocco make history with a magical run',
+            'content': 'Morocco reached the semifinals and captured the imagination of the world with disciplined defending and fearless attacks.',
+            'image': '/news/morocco-run.svg',
         },
         {
-            'name': 'Final',
-            'matches': [('Argentina', 'France')],
+            'tag': 'Record breaker',
+            'headline': 'Mbappé lights up the final with a record-breaking comeback',
+            'content': 'Kylian Mbappé scored twice in the final’s closing minutes to force extra time and rewrite the match narrative.',
+            'image': '/news/mbappe-record.png',
         },
     ]
+
+    return render_template(
+        'home/home.html',
+        stats=stats,
+        matches=matches,
+        cup_winner=cup_winner,
+        news_items=news_items,
+    )
+
+
+@app.route('/matches')
+def matches():
+    stats, matches, groups = load_dashboard_data()
+    return render_template(
+        'matches/matches.html',
+        matches=matches,
+        groups=groups,
+    )
+
+
+@app.route('/players')
+def players():
     awards = [
         {
             'trophy': 'Golden Ball',
@@ -109,14 +131,19 @@ def index():
         },
     ]
     return render_template(
-        'index.html',
-        stats=stats,
-        matches=matches,
-        groups=groups,
-        cup_winner=cup_winner,
-        knockout_rounds=knockout_rounds,
+        'players/players.html',
         awards=awards,
     )
+
+
+@app.route('/teams')
+def teams():
+    return render_template('teams/teams.html')
+
+
+@app.route('/profile')
+def profile():
+    return render_template('profile/profile.html')
 
 
 @app.route('/api/search-players')
@@ -135,6 +162,60 @@ def search_players_api():
         enhanced_results.append(player_data)
     
     return jsonify(enhanced_results)
+
+
+@app.route('/api/match/<match_id>')
+def get_match_data(match_id):
+    """Fetch match event data by match ID"""
+    import json
+
+    match_file = BASE_DIR / 'matches_data' / f'{match_id}.json'
+
+    if not match_file.exists():
+        return jsonify({'error': 'Match not found'}), 404
+
+    try:
+        with open(match_file, 'r', encoding='utf-8') as f:
+            events = json.load(f)
+
+        metadata = None
+        metadata_path = BASE_DIR / 'other' / '106.json'
+        if metadata_path.exists():
+            with open(metadata_path, 'r', encoding='utf-8') as f:
+                metadata_records = json.load(f)
+
+            team_parts = [part.strip() for part in match_id.split('_vs_') if part.strip()]
+            if len(team_parts) >= 2:
+                home_name, away_name = team_parts[0], team_parts[1]
+                metadata = next(
+                    (
+                        record
+                        for record in metadata_records
+                        if (record.get('home_team', {}).get('home_team_name') or '').replace('_', ' ').strip().lower() == home_name.lower()
+                        and (record.get('away_team', {}).get('away_team_name') or '').replace('_', ' ').strip().lower() == away_name.lower()
+                    ),
+                    None,
+                )
+
+        payload = {
+            'id': match_id,
+            'home_team': (metadata or {}).get('home_team', {}).get('home_team_name') or (team_parts[0] if len(team_parts) >= 2 else None),
+            'away_team': (metadata or {}).get('away_team', {}).get('away_team_name') or (team_parts[1] if len(team_parts) >= 2 else None),
+            'competition': (metadata or {}).get('competition', {}).get('competition_name') or 'FIFA World Cup',
+            'date': (metadata or {}).get('match_date') or '',
+            'home_score': (metadata or {}).get('home_score'),
+            'away_score': (metadata or {}).get('away_score'),
+            'events': events,
+        }
+        return jsonify(payload)
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/match_analysis')
+def match_analysis():
+    # Match analysis page removed — route deprecated
+    return render_template('matches/matches.html')
 
 
 if __name__ == '__main__':

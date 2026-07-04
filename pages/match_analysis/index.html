@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Match Analysis</title>
+    <link rel="stylesheet" href="./style.css" />
+  </head>
+  <body>
+    <div class="page-shell">
+      <header class="analysis-header">
+        <div class="analysis-header__actions">
+          <a class="back-link" href="/matches">← Back to matches</a>
+          <div class="pill-group">
+            <span class="pill" id="match-competition">—</span>
+            <span class="pill" id="match-date">—</span>
+          </div>
+        </div>
+        <div class="analysis-header__intro">
+          <p class="eyebrow">Match analysis</p>
+          <h1 id="match-title">Loading match…</h1>
+          <div class="scoreline" id="scoreline">—</div>
+        </div>
+      </header>
+
+      <main class="analysis-content">
+        <section id="analysis-empty-state" class="empty-state" hidden></section>
+
+        <section id="analysis-shell" class="analysis-shell" hidden>
+          <div class="tab-strip" id="tab-strip" role="tablist" aria-label="Analysis tabs"></div>
+
+          <div class="analysis-grid">
+            <aside class="panel panel--side">
+              <div class="panel__heading">
+                <p class="panel__eyebrow">Team A</p>
+                <h3 id="team-a-name">Team A</h3>
+              </div>
+              <div id="team-a-selector" class="selector-holder"></div>
+            </aside>
+
+            <section class="panel panel--center" id="visual-panel">
+              <div class="panel__heading panel__heading--center">
+                <p class="panel__eyebrow">Active visual</p>
+                <h3 id="active-visual-title">Heatmap</h3>
+              </div>
+              <div id="visual-placeholder" class="visual-placeholder">
+                <div class="visual-placeholder__icon">◉</div>
+                <h4 id="visual-placeholder-title">No visual mounted yet</h4>
+                <p id="visual-placeholder-copy">Select a player from each side to begin exploring the match story.</p>
+              </div>
+            </section>
+
+            <aside class="panel panel--side">
+              <div class="panel__heading">
+                <p class="panel__eyebrow">Team B</p>
+                <h3 id="team-b-name">Team B</h3>
+              </div>
+              <div id="team-b-selector" class="selector-holder"></div>
+            </aside>
+          </div>
+        </section>
+      </main>
+    </div>
+
+    <script type="module" src="./js/main.js"></script>
+  </body>
+</html>

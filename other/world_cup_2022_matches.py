@@ -29,7 +29,7 @@ def make_safe_filename(team1, team2):
 # 3. FETCH AND SAVE EACH MATCH
 # -----------------------------
 # Create a folder to store the data
-os.makedirs('matches_data', exist_ok=True)
+os.makedirs('../matches_data', exist_ok=True)
 
 for match in matches:
     match_id = match['match_id']
@@ -38,7 +38,7 @@ for match in matches:
     
     # Build the safe filename
     filename = make_safe_filename(home_team, away_team) + '.json'
-    filepath = os.path.join('matches_data', filename)
+    filepath = os.path.join('../matches_data', filename)
     
     # Build the StatsBomb API URL (event data)
     url = f"https://raw.githubusercontent.com/statsbomb/open-data/master/data/events/{match_id}.json"
@@ -57,4 +57,4 @@ for match in matches:
     except Exception as e:
         print(f"  ❌ Error: {e}")
 
-print("\n✅ All done! Check the 'world_cup_2022_matches' folder.")
+print("\n✅ All done! Check the '../matches_data' folder.")

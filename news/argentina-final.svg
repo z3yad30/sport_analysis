@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="900" height="560" viewBox="0 0 900 560">
+  <rect width="900" height="560" fill="#0a1424"/>
+  <rect x="60" y="80" width="780" height="400" rx="32" fill="#101f39" stroke="#f8b851" stroke-width="6"/>
+  <rect x="110" y="128" width="250" height="140" rx="18" fill="#75b7ff"/>
+  <rect x="380" y="128" width="410" height="140" rx="18" fill="#f8b851"/>
+  <circle cx="545" cy="320" r="108" fill="#f8b851" opacity="0.9"/>
+  <circle cx="545" cy="320" r="74" fill="#0a1424"/>
+  <path d="M330 360h240" stroke="#f8b851" stroke-width="12" stroke-linecap="round"/>
+  <path d="M315 420h270" stroke="#75b7ff" stroke-width="12" stroke-linecap="round"/>
+  <text x="145" y="220" text-anchor="middle" fill="#fff" font-family="Arial, sans-serif" font-size="44" font-weight="700">ARG</text>
+  <text x="585" y="220" text-anchor="middle" fill="#0a1424" font-family="Arial, sans-serif" font-size="38" font-weight="700">FINAL GLORY</text>
+</svg>

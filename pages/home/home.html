@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Rasid | راصد — Home</title>
+  <link rel="stylesheet" href="/pages/home/home.css" />
+</head>
+<body>
+  <div class="page-shell">
+    <nav class="top-nav">
+      <div class="brand-signature">
+        <div class="brand-mark">
+          <svg viewBox="0 0 120 120" aria-hidden="true">
+            <defs>
+              <linearGradient id="brandGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" stop-color="#F8B851" />
+                <stop offset="100%" stop-color="#D17F0D" />
+              </linearGradient>
+            </defs>
+            <circle cx="60" cy="60" r="54" fill="#101820" stroke="#F8B851" stroke-width="4" />
+            <path d="M42 80 L42 40 L72 40 L72 80 L60 80 L60 54 L54 54 L54 80 Z" fill="url(#brandGradient)" />
+            <circle cx="80" cy="40" r="8" fill="#F8B851" />
+          </svg>
+        </div>
+        <div>
+          <p class="eyebrow">Rasid — راصد</p>
+          <p class="nav-caption">World Cup 2022 analytics platform</p>
+        </div>
+      </div>
+      <div class="nav-links">
+        <a class="nav-link active" href="/">Home</a>
+        <a class="nav-link" href="/matches">Matches</a>
+        <a class="nav-link" href="/players">Players</a>
+        <a class="nav-link" href="/teams">Teams</a>
+        <a class="nav-link" href="/profile">Profile</a>
+      </div>
+    </nav>
+
+    <main>
+      <div class="dashboard-panel">
+        <div class="dashboard-header">
+          <div>
+            <p class="section-label">Dashboard</p>
+            <h1>Rasid match intelligence hub</h1>
+            <p class="hero-copy">Browse World Cup 2022 match performance and high-level team analytics. Use the search bar to filter matches by name.</p>
+          </div>
+          <div class="search-container">
+            <label for="match-search" class="sr-only">Search matches</label>
+            <input id="match-search" class="search-input" type="search" placeholder="Search matches..." />
+          </div>
+        </div>
+
+        <div class="stats-grid">
+          <article class="stat-card">
+            <p class="stat-label">Matches</p>
+            <p class="stat-value">{{ stats.match_count }}</p>
+          </article>
+          <article class="stat-card">
+            <p class="stat-label">Players</p>
+            <p class="stat-value">{{ stats.player_count }}</p>
+          </article>
+          <article class="stat-card">
+            <p class="stat-label">Teams</p>
+            <p class="stat-value">{{ stats.team_count }}</p>
+          </article>
+          <article class="stat-card">
+            <p class="stat-label">Goals</p>
+            <p class="stat-value">{{ stats.total_goals }}</p>
+          </article>
+        </div>
+      </div>
+
+      <section class="match-list-section">
+        <div class="section-intro">
+          <p class="section-label">Matches</p>
+          <h2>Search matches</h2>
+          <p>Type to filter match names and see results update with every letter.</p>
+        </div>
+        <div class="match-list" id="home-match-list">
+          {% for match in matches %}
+          <article class="match-card" data-title="{{ match.display_name|lower }}">
+            <div class="match-competitors">
+              <div class="match-team {% if match.winner == match.home_team %}winner{% endif %}">{{ match.home_team }}</div>
+              <div class="match-score-block">
+                <span class="match-score">{{ match.home_score }}{% if match.home_penalties and match.home_penalties > 0 %} <span class="match-penalties">({{ match.home_penalties }})</span>{% endif %}</span>
+                <span class="match-score-divider">-</span>
+                <span class="match-score">{{ match.away_score }}{% if match.away_penalties and match.away_penalties > 0 %} <span class="match-penalties">({{ match.away_penalties }})</span>{% endif %}</span>
+              </div>
+              <div class="match-team {% if match.winner == match.away_team %}winner{% endif %}">{{ match.away_team }}</div>
+            </div>
+            <div class="match-card-foot">
+              <p class="match-winner">Winner: <span>{{ match.winner }}</span></p>
+              <button class="btn btn-secondary match-action" type="button">Open analysis</button>
+            </div>
+          </article>
+          {% endfor %}
+        </div>
+      </section>
+
+      <section class="news-section section-panel" aria-labelledby="news-heading">
+        <div class="section-intro">
+          <p class="section-label">News</p>
+          <h2 id="news-heading">World Cup headlines</h2>
+          <p>Browse a curated set of memorable moments from Qatar 2022, one story at a time.</p>
+        </div>
+        <div class="news-carousel" data-news-carousel>
+          <button class="news-nav news-nav-left" type="button" aria-label="Show previous news">&#10094;</button>
+          <div class="news-stage">
+            {% for item in news_items %}
+            <article class="news-slide{% if loop.first %} active{% endif %}" data-index="{{ loop.index0 }}">
+              <img class="news-image" src="{{ item.image }}" alt="{{ item.headline }}" />
+              <div class="news-copy">
+                <p class="news-tag">{{ item.tag }}</p>
+                <h3>{{ item.headline }}</h3>
+                <p>{{ item.content }}</p>
+              </div>
+            </article>
+            {% endfor %}
+          </div>
+          <button class="news-nav news-nav-right" type="button" aria-label="Show next news">&#10095;</button>
+          <div class="news-footer">
+            <div class="news-dots" role="tablist" aria-label="News selection">
+              {% for item in news_items %}
+              <button class="news-dot{% if loop.first %} active{% endif %}" type="button" data-index="{{ loop.index0 }}" aria-label="Show news {{ loop.index }}"></button>
+              {% endfor %}
+            </div>
+            <p class="news-counter">1 / {{ news_items|length }}</p>
+          </div>
+        </div>
+      </section>
+
+      <section class="cup-winner-section section-panel">
+        <div class="section-intro">
+          <p class="section-label">CUP Winner</p>
+          <h2>{{ cup_winner.name }}</h2>
+          <p>The champions of the 2022 FIFA World Cup are proudly showcased in Rasid’s home dashboard.</p>
+        </div>
+        <div class="cup-winner-card">
+          <div class="cup-winner-flag">
+            <img src="{{ cup_winner.flag }}" alt="{{ cup_winner.name }} flag" />
+          </div>
+          <div class="cup-winner-details">
+            <p class="cup-winner-title">{{ cup_winner.name }}</p>
+            <p class="cup-winner-meta">{{ cup_winner.wins }}</p>
+            <p class="cup-winner-final">Final: {{ cup_winner.name }} vs {{ cup_winner.final_opponent }}</p>
+            <div class="final-teams">
+              <div class="final-team-pill">
+                <img src="{{ cup_winner.flag }}" alt="{{ cup_winner.name }} flag" />
+                <span>{{ cup_winner.name }}</span>
+              </div>
+              <div class="final-team-pill">
+                <img src="{{ cup_winner.final_flag }}" alt="{{ cup_winner.final_opponent }} flag" />
+                <span>{{ cup_winner.final_opponent }}</span>
+              </div>
+            </div>
+            <p class="cup-winner-score">{{ cup_winner.final_score }}</p>
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
+  <script src="/pages/home/home.js" defer></script>
+</body>
+</html>

@@ -31,7 +31,7 @@ from scipy.stats import gaussian_kde
 # 1. DATA PREPARATION (Runs once when the app starts)
 # ---------------------------------------------------------
 DATA_PATH = os.path.join(
-    os.path.dirname(__file__), "matches_data", "Argentina_vs_France.json"
+    os.path.dirname(__file__), "Argentina_vs_France.json"
 )
 
 
