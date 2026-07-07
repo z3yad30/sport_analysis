@@ -5,6 +5,7 @@ const state = {
   selectedPlayerA: null,
   selectedPlayerB: null,
   activeTab: 'Heatmap',
+  isLoading: false,
   selectionVersion: 0,
 };
 
@@ -41,6 +42,7 @@ export function resetState() {
   state.selectedPlayerA = null;
   state.selectedPlayerB = null;
   state.activeTab = 'Heatmap';
+  state.isLoading = false;
   state.selectionVersion = 0;
   publish();
 }

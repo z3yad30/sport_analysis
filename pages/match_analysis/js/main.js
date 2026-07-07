@@ -6,6 +6,10 @@ import { mountHeatmap } from './visuals/heatmap.js';
 import { mountShotmap } from './visuals/shotmap.js';
 import { mountPassmap } from './visuals/passmap.js';
 import { mountDeliverymap } from './visuals/deliverymap.js';
+import { mountDefensivemap } from './visuals/defensivemap.js';
+import { mountRadar } from './visuals/radar.js';
+import { mountTouchmap } from './visuals/touchmap.js';
+import { mountMomentum } from './visuals/momentum.js';
 
 function getMatchIdFromQuery() {
   const params = new URLSearchParams(window.location.search);
@@ -16,7 +20,51 @@ function resolveMatchId() {
   return getMatchIdFromQuery() || window.sessionStorage.getItem('activeMatchId');
 }
 
-function renderShell(match, teams, events, rawEvents = [], stateSnapshot = getState()) {
+function ensureVisualRoot(visualHost) {
+  const previousRoot = visualHost.querySelector('#visual-root');
+  if (previousRoot) {
+    previousRoot.remove();
+  }
+
+  const visualRoot = document.createElement('div');
+  visualRoot.id = 'visual-root';
+  visualRoot.className = 'visual-root';
+  visualHost.appendChild(visualRoot);
+  return visualRoot;
+}
+
+function renderLoadingState(visualHost, visualPlaceholderTitleEl, visualPlaceholderCopyEl) {
+  const visualRoot = ensureVisualRoot(visualHost);
+  visualHost.classList.add('visual-placeholder--active');
+  visualPlaceholderTitleEl.hidden = true;
+  visualPlaceholderCopyEl.hidden = true;
+  visualRoot.innerHTML = `
+    <div class="visual-loading" role="status" aria-live="polite">
+      <div class="visual-loading__spinner"></div>
+      <div class="visual-loading__text">
+        <strong>Preparing match story</strong>
+        <span>Normalizing events…</span>
+      </div>
+    </div>
+  `;
+}
+
+function renderPlayerVisualCard(container, { title, accentColor, content }) {
+  const card = document.createElement('article');
+  card.className = 'visual-card';
+  card.innerHTML = `
+    <div class="visual-card__header">
+      <span class="visual-card__dot" style="background:${accentColor || '#60a5fa'}"></span>
+      <h4>${title}</h4>
+    </div>
+    <div class="visual-card__body"></div>
+  `;
+  card.querySelector('.visual-card__body').appendChild(content);
+  container.appendChild(card);
+  return card;
+}
+
+function renderShell(match, teams, events, rawEvents = [], stateSnapshot = getState(), options = {}) {
   const titleEl = document.getElementById('match-title');
   const scorelineEl = document.getElementById('scoreline');
   const competitionEl = document.getElementById('match-competition');
@@ -54,99 +102,129 @@ function renderShell(match, teams, events, rawEvents = [], stateSnapshot = getSt
   dateEl.textContent = match.date || match.match_date || 'Date unavailable';
 
   if (!stateSnapshot.match) {
-    setState({ match, events, teams });
+    setState({ match, events, teams, isLoading: Boolean(stateSnapshot.isLoading || options.isLoading) });
+    return renderShell(match, teams, events, rawEvents, getState(), options);
   }
 
-  const tabs = ['Heatmap', 'Shot Map', 'Pass Map', 'Delivery Map', 'Defensive Actions', 'Touch Map', 'Radar Compare'];
+  const activeTab = stateSnapshot.activeTab || 'Heatmap';
+  const isLoading = Boolean(stateSnapshot.isLoading || options.isLoading);
+  const tabs = ['Heatmap', 'Shot Map', 'Pass Map', 'Deliveries', 'Defensive Actions', 'Touch Map', 'Radar Compare'];
   const accentA = '#60a5fa';
   const accentB = '#f97316';
   const playersA = getPlayersByTeam(events, teams[0] || '').map((name) => ({ name, jerseyNumber: null }));
   const playersB = getPlayersByTeam(events, teams[1] || '').map((name) => ({ name, jerseyNumber: null }));
 
+  const momentumHost = document.getElementById('momentum-shell');
+  if (momentumHost) {
+    mountMomentum(momentumHost, {
+      events: rawEvents,
+      teams,
+      teamColors: { [teams[0] || 'Team A']: accentA, [teams[1] || 'Team B']: accentB },
+    });
+  }
+
   tabStripEl.innerHTML = '';
   tabs.forEach((tab) => {
     const button = document.createElement('button');
     button.type = 'button';
-    button.className = `tab${stateSnapshot.activeTab === tab ? ' is-active' : ''}`;
+    button.className = `tab${activeTab === tab ? ' is-active' : ''}`;
     button.textContent = tab;
     button.addEventListener('click', () => {
       setState({ activeTab: tab });
-      renderShell(match, teams, events, rawEvents);
     });
     tabStripEl.appendChild(button);
   });
 
-  visualTitleEl.textContent = stateSnapshot.activeTab || 'Heatmap';
-  visualPlaceholderTitleEl.textContent = stateSnapshot.activeTab === 'Heatmap'
-    ? 'Heatmap'
-    : stateSnapshot.activeTab === 'Shot Map'
-      ? 'Shot Map'
-      : stateSnapshot.activeTab === 'Pass Map'
-        ? 'Pass Map'
-        : stateSnapshot.activeTab === 'Delivery Map'
-          ? 'Delivery Map'
-          : 'Visual shell ready';
-  visualPlaceholderCopyEl.textContent = stateSnapshot.selectedPlayerA || stateSnapshot.selectedPlayerB
-    ? `Active tab: ${stateSnapshot.activeTab}. A: ${stateSnapshot.selectedPlayerA || 'None'} • B: ${stateSnapshot.selectedPlayerB || 'None'}`
-    : `Active tab: ${stateSnapshot.activeTab}. Select a player from each side to begin exploring the match story.`;
-
+  visualTitleEl.textContent = activeTab;
   const visualHost = document.getElementById('visual-placeholder');
   if (visualHost) {
-    const isSpecialVisual = stateSnapshot.activeTab === 'Heatmap' || stateSnapshot.activeTab === 'Shot Map' || stateSnapshot.activeTab === 'Pass Map' || stateSnapshot.activeTab === 'Delivery Map';
-    visualHost.classList.toggle('visual-placeholder--active', isSpecialVisual);
-    visualPlaceholderTitleEl.hidden = isSpecialVisual;
-    visualPlaceholderCopyEl.hidden = isSpecialVisual;
+    visualHost.classList.remove('visual-placeholder--empty');
+    visualHost.classList.add('visual-placeholder--active');
+    visualPlaceholderTitleEl.hidden = true;
+    visualPlaceholderCopyEl.hidden = true;
 
-    let visualRoot = document.getElementById('visual-root');
-    if (!visualRoot) {
-      visualRoot = document.createElement('div');
-      visualRoot.id = 'visual-root';
-      visualHost.appendChild(visualRoot);
-    }
-
-    if (stateSnapshot.activeTab === 'Heatmap') {
-      mountHeatmap(visualRoot, {
-        playerA: stateSnapshot.selectedPlayerA,
-        playerB: stateSnapshot.selectedPlayerB,
-        teamAColor: accentA,
-        teamBColor: accentB,
-        events,
-      });
-    } else if (stateSnapshot.activeTab === 'Shot Map') {
-      const activePlayer = stateSnapshot.selectedPlayerA || stateSnapshot.selectedPlayerB || null;
-      const activeTeamName = stateSnapshot.selectedPlayerA ? teams[0] : stateSnapshot.selectedPlayerB ? teams[1] : null;
-      mountShotmap(visualRoot, {
-        player: activePlayer,
-        teamColor: activeTeamName === teams[0] ? accentA : accentB,
-        events: rawEvents,
-        flipX: activeTeamName === teams[1],
-      });
-    } else if (stateSnapshot.activeTab === 'Pass Map') {
-      const activePlayer = stateSnapshot.selectedPlayerA || stateSnapshot.selectedPlayerB || null;
-      const activeTeamName = stateSnapshot.selectedPlayerA ? teams[0] : stateSnapshot.selectedPlayerB ? teams[1] : null;
-      mountPassmap(visualRoot, {
-        player: activePlayer,
-        teamColor: activeTeamName === teams[0] ? accentA : accentB,
-        events: rawEvents,
-        flipX: activeTeamName === teams[1],
-      });
-    } else if (stateSnapshot.activeTab === 'Delivery Map') {
-      const activePlayer = stateSnapshot.selectedPlayerA || stateSnapshot.selectedPlayerB || null;
-      const activeTeamName = stateSnapshot.selectedPlayerA ? teams[0] : stateSnapshot.selectedPlayerB ? teams[1] : null;
-      mountDeliverymap(visualRoot, {
-        player: activePlayer,
-        teamColor: activeTeamName === teams[0] ? accentA : accentB,
-        events: rawEvents,
-      });
+    if (isLoading) {
+      renderLoadingState(visualHost, visualPlaceholderTitleEl, visualPlaceholderCopyEl);
     } else {
-      visualRoot.remove();
-      visualRoot = null;
-    }
+      const visualRoot = ensureVisualRoot(visualHost);
+      const isRadarTab = activeTab === 'Radar Compare';
+      const selectedPlayers = [
+        stateSnapshot.selectedPlayerA ? { playerName: stateSnapshot.selectedPlayerA, teamName: teams[0] || 'Team A', accentColor: accentA } : null,
+        stateSnapshot.selectedPlayerB ? { playerName: stateSnapshot.selectedPlayerB, teamName: teams[1] || 'Team B', accentColor: accentB } : null,
+      ].filter(Boolean);
 
-    if (!isSpecialVisual) {
-      const rootToClear = document.getElementById('visual-root');
-      if (rootToClear) {
-        rootToClear.remove();
+      if (isRadarTab) {
+        mountRadar(visualRoot, {
+          playerA: stateSnapshot.selectedPlayerA,
+          playerB: stateSnapshot.selectedPlayerB,
+          teamAColor: accentA,
+          teamBColor: accentB,
+          events: rawEvents,
+        });
+      } else if (!selectedPlayers.length) {
+        visualRoot.innerHTML = '<div class="visual-empty">Select a player from either side to compare their match story.</div>';
+      } else {
+        const cardsGrid = document.createElement('div');
+        cardsGrid.className = 'visual-cards-grid';
+        visualRoot.appendChild(cardsGrid);
+
+        selectedPlayers.forEach(({ playerName, teamName, accentColor }) => {
+          const cardShell = document.createElement('div');
+          cardShell.className = 'visual-card-shell';
+          const cardTitle = `${playerName} • ${teamName}`;
+          const body = document.createElement('div');
+          body.className = 'visual-card-body';
+
+          if (activeTab === 'Heatmap') {
+            mountHeatmap(body, {
+              playerA: playerName,
+              playerB: null,
+              teamAColor: accentColor,
+              teamBColor: accentColor,
+              events,
+            });
+          } else if (activeTab === 'Shot Map') {
+            mountShotmap(body, {
+              player: playerName,
+              teamColor: accentColor,
+              events: rawEvents,
+              flipX: teamName === teams[1],
+            });
+          } else if (activeTab === 'Pass Map') {
+            mountPassmap(body, {
+              player: playerName,
+              teamColor: accentColor,
+              events: rawEvents,
+              flipX: teamName === teams[1],
+            });
+          } else if (activeTab === 'Deliveries') {
+            mountDeliverymap(body, {
+              player: playerName,
+              teamColor: accentColor,
+              events: rawEvents,
+            });
+          } else if (activeTab === 'Defensive Actions') {
+            mountDefensivemap(body, {
+              player: playerName,
+              teamColor: accentColor,
+              events: rawEvents,
+              flipX: teamName === teams[1],
+            });
+          } else if (activeTab === 'Touch Map') {
+            mountTouchmap(body, {
+              player: playerName,
+              teamColor: accentColor,
+              events: rawEvents,
+              flipX: teamName === teams[1],
+            });
+          }
+
+          renderPlayerVisualCard(cardsGrid, {
+            title: cardTitle,
+            accentColor,
+            content: body,
+          });
+        });
       }
     }
   }
@@ -160,7 +238,6 @@ function renderShell(match, teams, events, rawEvents = [], stateSnapshot = getSt
       selectedValue: stateSnapshot.selectedPlayerA,
       onSelect: (playerName) => {
         setState({ selectedPlayerA: playerName });
-        renderShell(match, teams, events, rawEvents);
       },
     });
 
@@ -172,7 +249,6 @@ function renderShell(match, teams, events, rawEvents = [], stateSnapshot = getSt
       selectedValue: stateSnapshot.selectedPlayerB,
       onSelect: (playerName) => {
         setState({ selectedPlayerB: playerName });
-        renderShell(match, teams, events, rawEvents);
       },
     });
   }
@@ -206,7 +282,10 @@ function boot() {
     renderShell(context.match, context.teams, context.events, context.rawEvents, getState());
   });
 
-  renderShell(context.match, context.teams, context.events, rawEvents);
+  renderShell(context.match, context.teams, context.events, rawEvents, { ...getState(), isLoading: true });
+  window.setTimeout(() => {
+    setState({ isLoading: false });
+  }, 140);
 }
 
 document.addEventListener('DOMContentLoaded', boot);

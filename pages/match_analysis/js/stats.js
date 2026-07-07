@@ -139,19 +139,31 @@ export function touchStats(events, playerName) {
     byThird[third] += 1;
   });
   const carries = playerEvents.filter((event) => getEventType(event) === 'Carry');
+  const progressiveCarries = carries.filter((event) => {
+    const endLocation = event?.carry?.end_location;
+    if (!Array.isArray(endLocation) || endLocation.length < 2) {
+      return false;
+    }
+    const [, y] = endLocation;
+    return Number(endLocation[0]) > 90 && Number(y) > 20 && Number(y) < 60;
+  });
   const carryDistance = carries.reduce((sum, event) => {
     const location = getLocation(event);
     if (!location) {
       return sum;
     }
-    return sum + Math.hypot(location[0] - (event?.carry?.end_location?.[0] || location[0]), location[1] - (event?.carry?.end_location?.[1] || location[1]));
+    const endLocation = event?.carry?.end_location;
+    const endX = Array.isArray(endLocation) && endLocation.length >= 2 ? Number(endLocation[0]) : location[0];
+    const endY = Array.isArray(endLocation) && endLocation.length >= 2 ? Number(endLocation[1]) : location[1];
+    return sum + Math.hypot(location[0] - endX, location[1] - endY);
   }, 0);
 
   return {
     totalTouches: touches.length,
     touchesByThird: byThird,
     carries: carries.length,
-    progressiveCarryDistance: carryDistance,
+    progressiveCarries: progressiveCarries.length,
+    totalCarryDistance: carryDistance,
   };
 }
 
@@ -161,6 +173,7 @@ export function teamShotTimeline(events) {
     .map((event) => ({
       minute: Number(event?.minute ?? 0),
       team: getEventTeam(event),
+      player: getEventPlayer(event),
       xg: Number(event?.shot?.statsbomb_xg) || 0,
       isGoal: (event?.shot?.outcome?.name || '').toLowerCase() === 'goal',
     }))
