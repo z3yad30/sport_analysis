@@ -1,3 +1,5 @@
+let selectorId = 0;
+
 export function createPlayerSelector({ teamName, players, accentColor, onSelect, container, selectedValue = null }) {
   if (!container) {
     return {
@@ -41,61 +43,46 @@ export function createPlayerSelector({ teamName, players, accentColor, onSelect,
   const root = document.createElement('div');
   root.className = 'player-selector';
   root.style.setProperty('--selector-accent', accentColor || '#7dd3fc');
+  const listId = `player-selector-options-${selectorId++}`;
 
-  function createOption(option) {
-    const button = document.createElement('button');
-    button.type = 'button';
-    button.className = 'player-selector__option';
-    button.dataset.playerName = option.name || '';
+  function rerender() {
+    root.innerHTML = '';
+    const input = document.createElement('input');
+    input.className = 'player-selector__input';
+    input.type = 'search';
+    input.setAttribute('list', listId);
+    input.setAttribute('aria-label', `Search ${teamName || 'team'} players`);
+    input.placeholder = 'Search players…';
+    input.autocomplete = 'off';
+    input.value = uniquePlayers.find((player) => player.name === state.selected)?.name || 'None';
+    input.disabled = state.disabled;
+    input.addEventListener('change', () => {
+      const selectedOption = input.value === 'None'
+        ? { name: '' }
+        : uniquePlayers.find((player) => player.name === input.value);
 
-    if (state.selected === option.name) {
-      button.classList.add('is-selected');
-    }
-
-    if (state.disabled) {
-      button.disabled = true;
-    }
-
-    const label = document.createElement('span');
-    label.className = 'player-selector__label';
-    label.textContent = option.label || option.name;
-
-    const meta = document.createElement('span');
-    meta.className = 'player-selector__meta';
-    meta.textContent = option.name ? (option.jerseyNumber ? `#${option.jerseyNumber}` : '—') : 'None';
-
-    button.appendChild(label);
-    button.appendChild(meta);
-    button.addEventListener('click', () => {
-      if (state.disabled) {
+      if (!selectedOption) {
+        input.value = uniquePlayers.find((player) => player.name === state.selected)?.name || 'None';
         return;
       }
-      const nextValue = option.name || null;
+
+      const nextValue = selectedOption.name || null;
       state.selected = nextValue;
-      rerender();
       onSelect?.(nextValue);
     });
 
-    return button;
-  }
-
-  function rerender() {
-    const fragment = document.createDocumentFragment();
-    fragment.appendChild(createOption({ name: '', label: 'None', jerseyNumber: null }));
-
+    const options = document.createElement('datalist');
+    options.id = listId;
+    const noneOption = document.createElement('option');
+    noneOption.value = 'None';
+    options.appendChild(noneOption);
     uniquePlayers.forEach((player) => {
-      fragment.appendChild(createOption({ name: player.name, label: player.name, jerseyNumber: player.jerseyNumber }));
+      const option = document.createElement('option');
+      option.value = player.name;
+      options.appendChild(option);
     });
 
-    root.innerHTML = '';
-    const heading = document.createElement('div');
-    heading.className = 'player-selector__heading';
-    heading.innerHTML = `<span>${teamName || 'Team'}</span><span>Single select</span>`;
-    root.appendChild(heading);
-    const list = document.createElement('div');
-    list.className = 'player-selector__list';
-    list.appendChild(fragment);
-    root.appendChild(list);
+    root.append(input, options);
   }
 
   rerender();
@@ -106,17 +93,15 @@ export function createPlayerSelector({ teamName, players, accentColor, onSelect,
     setDisabled(value) {
       state.disabled = Boolean(value);
       root.classList.toggle('is-disabled', state.disabled);
-      const buttons = root.querySelectorAll('.player-selector__option');
-      buttons.forEach((button) => {
-        button.disabled = state.disabled;
-      });
+      root.querySelector('.player-selector__input').disabled = state.disabled;
     },
     getSelected() {
       return state.selected;
     },
     setSelected(value) {
       state.selected = value ?? null;
-      rerender();
+      const input = root.querySelector('.player-selector__input');
+      input.value = uniquePlayers.find((player) => player.name === state.selected)?.name || 'None';
     },
   };
 }

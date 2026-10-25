@@ -45,10 +45,28 @@ export function mountMomentum(container, { events = [], teams = [], teamColors =
 
   const heading = document.createElement('div');
   heading.className = 'momentum-shell__heading';
-  heading.innerHTML = '<p class="panel__eyebrow">Match momentum</p><h3>Shot timeline & xG flow</h3>';
+  heading.innerHTML = '<div class="momentum-shell__titles"><p class="panel__eyebrow">Match momentum</p><h3>Shot timeline & xG flow</h3></div>';
   wrapper.appendChild(heading);
 
   const shots = teamShotTimeline(events);
+  const teamNames = teams.filter(Boolean);
+  const colors = {
+    [teamNames[0] || 'Team A']: teamColors[teamNames[0]] || '#60a5fa',
+    [teamNames[1] || 'Team B']: teamColors[teamNames[1]] || '#f97316',
+  };
+  const labels = document.createElement('div');
+  labels.className = 'momentum-legend';
+  teamNames.forEach((teamName) => {
+    const item = document.createElement('span');
+    item.className = 'momentum-legend__item';
+    const swatch = document.createElement('span');
+    swatch.className = 'momentum-legend__swatch';
+    swatch.style.background = colors[teamName];
+    item.append(swatch, document.createTextNode(teamName));
+    labels.appendChild(item);
+  });
+  heading.appendChild(labels);
+
   if (!shots.length) {
     const empty = document.createElement('div');
     empty.className = 'momentum-empty';
@@ -60,7 +78,8 @@ export function mountMomentum(container, { events = [], teams = [], teamColors =
 
   const fullTime = getFullTime(shots);
   const svg = createSvgElement('svg', {
-    viewBox: '0 0 500 130',
+    viewBox: '0 0 500 150',
+    preserveAspectRatio: 'none',
     class: 'momentum-svg',
     role: 'img',
     'aria-label': 'Match shot timeline',
@@ -96,24 +115,24 @@ export function mountMomentum(container, { events = [], teams = [], teamColors =
   const htLabel = createSvgElement('text', {
     x: htX.toFixed(2),
     y: '12',
-    fill: 'rgba(255, 255, 255, 0.4)',
-    'font-size': '8',
+    fill: 'rgba(255, 255, 255, 0.72)',
+    'font-size': '10',
     'text-anchor': 'middle',
     'font-family': 'sans-serif',
   });
-  htLabel.textContent = '45\'';
+  htLabel.textContent = 'HT';
   svg.appendChild(htLabel);
 
   // FT Label
   const ftLabel = createSvgElement('text', {
     x: ftX.toFixed(2),
     y: '12',
-    fill: 'rgba(255, 255, 255, 0.4)',
-    'font-size': '8',
+    fill: 'rgba(255, 255, 255, 0.72)',
+    'font-size': '10',
     'text-anchor': 'middle',
     'font-family': 'sans-serif',
   });
-  ftLabel.textContent = '90\'';
+  ftLabel.textContent = 'FT';
   svg.appendChild(ftLabel);
 
   // Subtle baseline at 0
@@ -127,6 +146,29 @@ export function mountMomentum(container, { events = [], teams = [], teamColors =
   });
   svg.appendChild(baseline);
 
+  for (let minute = 0; minute <= 90; minute += 15) {
+    const x = 30 + (minute / fullTime) * 440;
+    svg.appendChild(createSvgElement('line', {
+      x1: x.toFixed(2),
+      y1: '115',
+      x2: x.toFixed(2),
+      y2: '120',
+      stroke: 'rgba(255, 255, 255, 0.35)',
+      'stroke-width': '1',
+    }));
+
+    const tickLabel = createSvgElement('text', {
+      x: x.toFixed(2),
+      y: '138',
+      fill: 'rgba(255, 255, 255, 0.62)',
+      'font-size': '9',
+      'text-anchor': 'middle',
+      'font-family': 'sans-serif',
+    });
+    tickLabel.textContent = `${minute}'`;
+    svg.appendChild(tickLabel);
+  }
+
   const track = createSvgElement('rect', {
     x: '30',
     y: '34',
@@ -136,12 +178,6 @@ export function mountMomentum(container, { events = [], teams = [], teamColors =
     fill: 'rgba(255,255,255,0.16)',
   });
   svg.appendChild(track);
-
-  const teamNames = teams.filter(Boolean);
-  const colors = {
-    [teamNames[0] || 'Team A']: teamColors[teamNames[0]] || '#60a5fa',
-    [teamNames[1] || 'Team B']: teamColors[teamNames[1]] || '#f97316',
-  };
 
   // Compute max xG across both teams to scale uniformly
   const teamTotals = {};
@@ -157,7 +193,7 @@ export function mountMomentum(container, { events = [], teams = [], teamColors =
       points: points.map(([x, y]) => `${x.toFixed(2)},${y.toFixed(2)}`).join(' '),
       fill: 'none',
       stroke: colors[teamName],
-      'stroke-width': '1.5',
+      'stroke-width': '2.5',
       'stroke-linecap': 'round',
       'stroke-linejoin': 'round',
       opacity: '0.85',
@@ -193,15 +229,15 @@ export function mountMomentum(container, { events = [], teams = [], teamColors =
     const marker = createSvgElement('circle', {
       cx: x.toFixed(2),
       cy: y.toFixed(2),
-      r: shot.isGoal ? '6.5' : '4.0',
+      r: shot.isGoal ? '8.5' : '4.5',
       fill: shot.isGoal ? (colors[shot.team] || '#f8fafc') : 'none',
       stroke: colors[shot.team] || '#f8fafc',
-      'stroke-width': shot.isGoal ? '2.0' : '1.5',
+      'stroke-width': shot.isGoal ? '2.5' : '1.75',
       cursor: 'pointer',
     });
 
     const title = createSvgElement('title');
-    title.textContent = `${shot.player || 'Player'} • ${shot.minute}'${shot.isGoal ? ' • Goal' : ''} (${shot.xg ? shot.xg.toFixed(2) : '0.00'} xG)`;
+    title.textContent = `Minute: ${shot.minute}'\nPlayer: ${shot.player || 'Player'}\nxG: ${shot.xg ? shot.xg.toFixed(2) : '0.00'}`;
     marker.appendChild(title);
     svg.appendChild(marker);
 
@@ -209,16 +245,6 @@ export function mountMomentum(container, { events = [], teams = [], teamColors =
   });
 
   wrapper.appendChild(svg);
-
-  const labels = document.createElement('div');
-  labels.className = 'momentum-legend';
-  teamNames.forEach((teamName) => {
-    const item = document.createElement('span');
-    item.className = 'momentum-legend__item';
-    item.innerHTML = `<span class="momentum-legend__swatch" style="background:${colors[teamName]}"></span>${teamName}`;
-    labels.appendChild(item);
-  });
-  wrapper.appendChild(labels);
 
   container.appendChild(wrapper);
   return wrapper;

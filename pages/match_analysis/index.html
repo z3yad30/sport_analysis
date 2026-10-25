@@ -27,19 +27,30 @@
         <section id="analysis-empty-state" class="empty-state" hidden></section>
 
         <section id="analysis-shell" class="analysis-shell" hidden>
-          <div id="momentum-shell" class="momentum-shell"></div>
-          <div class="tab-strip" id="tab-strip" role="tablist" aria-label="Analysis tabs"></div>
+          <div id="momentum-shell" class="momentum-host"></div>
 
-          <div class="analysis-grid">
-            <aside class="panel panel--side">
-              <div class="panel__heading">
-                <p class="panel__eyebrow">Team A</p>
-                <h3 id="team-a-name">Team A</h3>
-              </div>
-              <div id="team-a-selector" class="selector-holder"></div>
-            </aside>
+          <section class="map-section" aria-label="Match map">
+            <div class="tab-strip" id="tab-strip" role="tablist" aria-label="Analysis tabs"></div>
 
-            <section class="panel panel--center" id="visual-panel">
+            <div class="player-selector-row">
+              <section class="player-selector-panel player-selector-panel--a">
+                <div class="map-team-heading">
+                  <span class="map-team-heading__dot"></span>
+                  <h3 id="team-a-name">Team A</h3>
+                </div>
+                <div id="team-a-selector" class="selector-holder"></div>
+              </section>
+
+              <section class="player-selector-panel player-selector-panel--b">
+                <div class="map-team-heading">
+                  <span class="map-team-heading__dot"></span>
+                  <h3 id="team-b-name">Team B</h3>
+                </div>
+                <div id="team-b-selector" class="selector-holder"></div>
+              </section>
+            </div>
+
+            <section class="panel map-stage" id="visual-panel" aria-label="Player maps">
               <div class="panel__heading panel__heading--center">
                 <p class="panel__eyebrow">Active visual</p>
                 <h3 id="active-visual-title">Heatmap</h3>
@@ -50,15 +61,7 @@
                 <p id="visual-placeholder-copy">Select a player from each side to begin exploring the match story.</p>
               </div>
             </section>
-
-            <aside class="panel panel--side">
-              <div class="panel__heading">
-                <p class="panel__eyebrow">Team B</p>
-                <h3 id="team-b-name">Team B</h3>
-              </div>
-              <div id="team-b-selector" class="selector-holder"></div>
-            </aside>
-          </div>
+          </section>
         </section>
       </main>
     </div>
